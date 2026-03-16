@@ -1,8 +1,8 @@
 import express from "express"
-import { UserModel } from "../Models/UserModel";
-import bcrypt from 'bcrypt';
+import { UserModel } from "../Models/UserModel.js";
+import {hash} from 'bcryptjs';
 
-const userRouter = express.Router();
+export const userRouter = express.Router();
 
 userRouter.post("/register",async(req,res)=>{
     let userObj = req.body;
@@ -12,7 +12,7 @@ userRouter.post("/register",async(req,res)=>{
     await userDoc.validate();
 
     // hash the password
-    userDoc.password = await bcrypt.hash(userDoc.password, 12);
+    userDoc.password = await hash(userDoc.password, 12);
     //save
     const created = await userDoc.save();
     //convert document to object to remove password feild
