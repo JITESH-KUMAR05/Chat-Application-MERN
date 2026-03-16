@@ -3,7 +3,7 @@ POST http://localhost:4000/message-api/send/69b79c76c5222bee1869b061
 Content-Type: application/json
 
 {
-    "sender":"69b79620be2d5cafc3939044",
+    "sender":"69b7bd75dad5b9a32ef807ae",
     "content": "Hi This is the First Message"
 }
 ### Get Messages
@@ -26,4 +26,14 @@ Content-Type: application/json
 {
     "email": "test@gmail.com",
     "password": "test123"
+}
+
+### change password
+PATCH http://localhost:4000/user-api/change-password
+Content-Type: application/json
+
+{
+    "email": "test2@gmail.com",
+    "currentPassword": "test123",
+    "newPassword": "test1234"
 }
