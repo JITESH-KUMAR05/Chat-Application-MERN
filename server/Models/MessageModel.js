@@ -10,7 +10,7 @@ const messageSchema = new Schema({
          type:Schema.Types.ObjectId,
         ref:"user"
     },
-    message:{
+    content:{
         type:String,
     },
     isEdited:{
