@@ -25,5 +25,5 @@ export default function SplashScreen({ onStart }) {
       </button>
 
     </div>
-  )
+  ) 
 }

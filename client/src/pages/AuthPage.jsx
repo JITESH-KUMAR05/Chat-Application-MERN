@@ -57,7 +57,7 @@ type="email"
 name="email"
 placeholder="Email Address"
 onChange={handleChange}
-className="w-full border p-3 mb-3 rounded-lg focus:outline-blue-400"
+className=" w-full border p-3 mb-3 rounded-lg focus:outline-blue-400"
 />
 
 <input
