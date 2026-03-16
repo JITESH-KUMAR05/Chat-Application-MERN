@@ -9,3 +9,12 @@ Content-Type: application/json
 ### Get Messages
 
 GET http://localhost:4000/message-api/messages/69b79c76c5222bee1869b061
+### register
+POST http://localhost:4000/user-api/register
+Content-Type: application/json
+
+{
+    "name": "test",
+    "email": "test@gmail.com",
+    "password": "test123"
+}

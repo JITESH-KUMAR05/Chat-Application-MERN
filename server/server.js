@@ -1,13 +1,15 @@
-import exp  from 'express'
 import dotenv from 'dotenv'
 import {connect} from 'mongoose'
 import messageRoute from './APIs/MessageAPI.js'
 
+
+import {userRouter} from "./APIs/UserAPI.js"
+import express from 'express'
+
 dotenv.config()
 
-const app = exp()
-app.use(exp.json())
-app.use('/message-api',messageRoute)
+const app = express()
+
 const connectDB = async()=>{
 
     try
@@ -24,3 +26,7 @@ const connectDB = async()=>{
 
 }
 connectDB()
+
+app.use(express.json());
+app.use("/user-api",userRouter)
+app.use('/message-api',messageRoute)
