@@ -2,6 +2,7 @@ import exp from 'express'
 import { MessageModel } from '../Models/MessageModel.js';
 export const messageRoute = exp.Router()
 
+
 messageRoute.post('/send/:receiverID', async (req,res) => {
 
         // console.log()
@@ -22,10 +23,10 @@ messageRoute.post('/send/:receiverID', async (req,res) => {
         await newMessage.save();
 
         // get the socket io instance
-        const io = req.app.get("socketio")
+        // const io = req.app.get("socketio")
 
         // emit the message
-        io.to(req.params.receiverID).emit("message Received",newMessage)
+        // io.to(req.params.receiverID).to(senderID).emit("message Received", newMessage);
 
         // Send the saved message back to the frontend
         res.status(201).json({message:"Message Sent",payload: newMessage});

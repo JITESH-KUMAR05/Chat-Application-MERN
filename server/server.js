@@ -8,6 +8,7 @@ import cors from "cors"
 
 
 import {userRouter} from "./APIs/UserAPI.js"
+import { MessageModel } from './Models/MessageModel.js'
 
 
 dotenv.config()
@@ -53,6 +54,19 @@ const connectDB = async()=>{
     {
         await connect(process.env.MONGO_URI)
         console.log("DB Connection Succesful")
+        const messageChangeStream = MessageModel.watch();
+
+        messageChangeStream.on('change', (change) => {
+            // When a new document is inserted into the collection
+            if (change.operationType === 'insert') {
+                const messageDetails = change.fullDocument;
+                
+                // Emit the real-time update to both the sender and receiver's specific rooms
+                io.to(messageDetails.receiver.toString())
+                  .to(messageDetails.sender.toString())
+                  .emit("message Received", messageDetails);
+            }
+        });
         // Start HTTP Server
         const PORT = process.env.PORT;
         server.listen(PORT,()=>console.log("Server Started on Port:- ",PORT))
