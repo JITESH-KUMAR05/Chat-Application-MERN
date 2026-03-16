@@ -1,7 +1,9 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom"
-import SplashScreen from "./components/SplashScreen"
-import AuthPage from "./pages/AuthPage"
+import SplashScreen from "./components/SplashScreen";
+import AuthPage from "./pages/AuthPage";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useNavigate } from "react-router-dom"
+
+function App() {
 
 function SplashWrapper() {
   const navigate = useNavigate()
@@ -9,7 +11,6 @@ function SplashWrapper() {
   return <SplashScreen onStart={() => navigate("/auth")} />
 }
 
-function App() {
   return (
     <BrowserRouter>
       <Routes>
@@ -20,4 +21,4 @@ function App() {
   )
 }
 
-export default App
+export default App;
