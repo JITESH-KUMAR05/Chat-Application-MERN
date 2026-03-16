@@ -1,12 +1,13 @@
 import exp  from 'express'
 import dotenv from 'dotenv'
 import {connect} from 'mongoose'
+import messageRoute from './APIs/MessageAPI.js'
 
 dotenv.config()
 
 const app = exp()
 app.use(exp.json())
-
+app.use('/message-api',messageRoute)
 const connectDB = async()=>{
 
     try
