@@ -5,6 +5,7 @@ import {Server} from "socket.io"
 import messageRoute from './APIs/MessageAPI.js'
 import express from 'express'
 import cors from "cors"
+import jwt from "jsonwebtoken"
 
 
 import {userRouter} from "./APIs/UserAPI.js"
@@ -23,20 +24,51 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
     cors:{
-        origin: ["http://localhost:5173","http://127.0.0.1:5500"]
+        origin: ["http://localhost:5173","http://127.0.0.1:5501"]
     }
 })
 
+
+// io.use((socket, next) => {
+//   // We'll pass the token from the frontend connection options
+//   const token = socket.handshake.auth.token; 
+  
+//   if (!token) {
+//     return next(new Error("Authentication error: No token provided"));
+//   }
+
+//   try {
+//     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+//     // Attach the verified user ID safely to the socket object!
+//     socket.userId = decoded._id; 
+//     next();
+//   } catch (err) {
+//     return next(new Error("Authentication error: Invalid token"));
+//   }
+// });
 
 
 io.on("connection", (socket) => {
     console.log("A user connected via socket", socket.id);
 
     // message handling logic here
-    socket.on("setup", (userData) => {
-        socket.join(userData._id); // Join a room specifically for this user
+   socket.on("setup", (userData) => {
+        // 1. Join Personal Room for Direct Messages
+        if(userData._id) {
+            socket.join(userData._id); 
+            console.log(`User ${userData._id} joined personal room`);
+        }
+
+        // 2. Join Channel Rooms
+        // Expecting frontend to pass an array: channels: ["channelID1", "channelID2"]
+        if (userData.channels && Array.isArray(userData.channels)) {
+            userData.channels.forEach(channelId => {
+                socket.join(channelId);
+                console.log(`User joined channel: ${channelId}`);
+            });
+        }
+        
         socket.emit("connected");
-        console.log("User joined personal room:", userData._id);
     });
 
     socket.on("disconnect", () => {
@@ -65,6 +97,28 @@ const connectDB = async()=>{
                 io.to(messageDetails.receiver.toString())
                   .to(messageDetails.sender.toString())
                   .emit("message Received", messageDetails);
+        messageChangeStream.on('change', async (change) => {
+            if (change.operationType === 'insert') {
+                // MongoDB Change Streams don't automatically populate referenced fields.
+                // We need to fetch the full populated document so the frontend has sender details (Name, Avatar, etc)
+                const messageDetails = change.fullDocument;
+                
+                // Let's grab the populated message to send to the frontend
+                const populatedMessage = await MessageModel.findById(messageDetails._id)
+                    .populate("sender", "name email profilePic") // Send public user details to UI
+
+                if (messageDetails.channel) {
+                    // It's a Group Channel Message. Broadcast to everyone in that channel's room.
+                    console.log(`Broadcasting to channel: ${messageDetails.channel}`);
+                    io.to(messageDetails.channel.toString()).emit("message Received", populatedMessage);
+                    
+                } else if (messageDetails.receiver) {
+                    // It's a Direct Message. Send to Receiver AND Sender.
+                    console.log(`Broadcasting DM to: ${messageDetails.receiver}`);
+                    io.to(messageDetails.receiver.toString())
+                      .to(messageDetails.sender.toString())
+                      .emit("message Received", populatedMessage);
+                }
             }
         });
         // Start HTTP Server
@@ -78,6 +132,8 @@ const connectDB = async()=>{
 
 }
 connectDB()
+
+
 
 
 app.use((err, req, res, next) => {

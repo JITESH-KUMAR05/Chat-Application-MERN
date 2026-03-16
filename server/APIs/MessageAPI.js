@@ -1,26 +1,35 @@
 import exp from 'express'
 import { MessageModel } from '../Models/MessageModel.js';
+import { verifyToken } from '../middleware/verifyToken.js';
 export const messageRoute = exp.Router()
 
+<<<<<<< HEAD
 
 messageRoute.post('/send/:receiverID', async (req,res) => {
+=======
+messageRoute.post('/send', verifyToken, async (req,res) => {
+>>>>>>> 01970f1b661ab0d5514929d1f36e207cb2b84ae2
 
-        // console.log()
-        let message =  req.body.content
-        let senderID = req.body.sender
-        if (!message) {
+        const { content, receiver } = req.body;
+        const sender = req.user._id;
+        if (!content) {
             return res.status(400).json({ error: "Message content is required" });
+        }
+        if (!receiver) {
+            return res.status(400).json({ error: "Must specify a receiver" });
         }
 
         // Create the new message document
         const newMessage = new MessageModel({
-            sender: senderID,
-            receiver: req.params.receiverID,
-            content: message,
+            sender,
+            content,
+            receiver
+            
         });
 
         // Save it to MongoDB
         await newMessage.save();
+<<<<<<< HEAD
 
         // get the socket io instance
         // const io = req.app.get("socketio")
@@ -28,13 +37,22 @@ messageRoute.post('/send/:receiverID', async (req,res) => {
         // emit the message
         // io.to(req.params.receiverID).to(senderID).emit("message Received", newMessage);
 
+=======
+>>>>>>> 01970f1b661ab0d5514929d1f36e207cb2b84ae2
         // Send the saved message back to the frontend
         res.status(201).json({message:"Message Sent",payload: newMessage});
 
 });
 messageRoute.get('/messages/:id', async (req,res) => {
-    let userID = req.params.id
-    let messages = await MessageModel.find({receiver: userID})
+    let myId = req.user._id;
+    let parter = req.params.id;
+    let messages = await MessageModel.find({
+            $or: [
+                { sender: myId, receiver: chatPartnerId },
+                { sender: chatPartnerId, receiver: myId }
+            ]
+        }).sort({ createdAt: 1 }); // Sort by oldest to newest to build the chat UI
+
     res.status(201).json({message:"List of Messages are:-",payload: messages})
 })
 
