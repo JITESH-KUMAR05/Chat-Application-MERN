@@ -4,7 +4,7 @@ export const messageRoute = exp.Router()
 
 messageRoute.post('/send/:receiverID', async (req,res) => {
 
-        console.log()
+        // console.log()
         let message =  req.body.content
         let senderID = req.body.sender
         if (!message) {
@@ -20,6 +20,12 @@ messageRoute.post('/send/:receiverID', async (req,res) => {
 
         // Save it to MongoDB
         await newMessage.save();
+
+        // get the socket io instance
+        const io = req.app.get("socketio")
+
+        // emit the message
+        io.to(req.params.receiverID).emit("message Received",newMessage)
 
         // Send the saved message back to the frontend
         res.status(201).json({message:"Message Sent",payload: newMessage});
