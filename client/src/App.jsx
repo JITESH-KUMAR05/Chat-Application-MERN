@@ -1,12 +1,16 @@
-import React from 'react'
-import AuthPage from './pages/AuthPage'
+import SplashScreen from "./components/SplashScreen";
+import AuthPage from "./pages/AuthPage";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-const App = () => {
+function App() {
   return (
-    <div>
-      <AuthPage/>
-    </div>
-  )
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<SplashScreen />} />
+        <Route path="/enter" element={<AuthPage />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
