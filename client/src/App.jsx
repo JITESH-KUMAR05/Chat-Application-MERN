@@ -1,24 +1,24 @@
+import { useState } from "react";
 import SplashScreen from "./components/SplashScreen";
 import AuthPage from "./pages/AuthPage";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useNavigate } from "react-router-dom"
+import ChatPage from "./pages/ChatPage";
 
 function App() {
 
-function SplashWrapper() {
-  const navigate = useNavigate()
+  const [page,setPage] = useState("splash");
 
-  return <SplashScreen onStart={() => navigate("/auth")} />
-}
+  if(page === "splash"){
+    return <SplashScreen goAuth={()=>setPage("auth")} />;
+  }
 
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<SplashWrapper />} />
-        <Route path="/auth" element={<AuthPage />} />
-      </Routes>
-    </BrowserRouter>
-  )
+  if(page === "auth"){
+    return <AuthPage goChat={()=>setPage("chat")} goBack={()=>setPage("splash")} />;
+  }
+
+  if(page === "chat"){
+    return <ChatPage logout={()=>setPage("auth")} />;
+  }
+
 }
 
 export default App;
