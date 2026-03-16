@@ -10,6 +10,16 @@ const messageSchema = new Schema({
          type:Schema.Types.ObjectId,
         ref:"user"
     },
+    channel: {
+        type: Schema.Types.ObjectId,
+        ref: "channel"
+    },
+    // For Thread replies, point to the parent message
+    parentMessage: {
+        type: Schema.Types.ObjectId,
+        ref: "message",
+        default: null
+    },
     content:{
         type:String,
     },
