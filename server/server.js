@@ -2,6 +2,10 @@ import dotenv from 'dotenv'
 import {connect} from 'mongoose'
 import http from "http"
 import {Server} from "socket.io"
+import messageRoute from './APIs/MessageAPI.js'
+
+
+import {userRouter} from "./APIs/UserAPI.js"
 import express from 'express'
 import cors from "cors"
 
@@ -106,3 +110,6 @@ app.use((err, req, res, next) => {
     error: "Server side error",
   });
 });
+app.use(express.json());
+app.use("/user-api",userRouter)
+app.use('/message-api',messageRoute)

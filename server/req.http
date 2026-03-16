@@ -1,9 +1,29 @@
+### Send Message by User Test
+POST http://localhost:4000/message-api/send/69b79c76c5222bee1869b061
+Content-Type: application/json
+
+{
+    "sender":"69b79620be2d5cafc3939044",
+    "content": "Hi This is the First Message"
+}
+### Get Messages
+
+GET http://localhost:4000/message-api/messages/69b79c76c5222bee1869b061
 ### register
 POST http://localhost:4000/user-api/register
 Content-Type: application/json
 
 {
     "name": "test",
+    "email": "test@gmail.com",
+    "password": "test123"
+}
+
+### login
+POST http://localhost:4000/user-api/login
+Content-Type: application/json
+
+{
     "email": "test@gmail.com",
     "password": "test123"
 }
