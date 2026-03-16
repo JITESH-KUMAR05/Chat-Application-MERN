@@ -3,9 +3,6 @@ import {connect} from 'mongoose'
 import http from "http"
 import {Server} from "socket.io"
 import messageRoute from './APIs/MessageAPI.js'
-
-
-import {userRouter} from "./APIs/UserAPI.js"
 import express from 'express'
 import cors from "cors"
 
@@ -22,9 +19,10 @@ const server = http.createServer(app);
 
 // initialize the socket.io
 
+
 const io = new Server(server, {
     cors:{
-        origin: "http://localhost:5173"
+        origin: ["http://localhost:5173","http://127.0.0.1:5500"]
     }
 })
 
@@ -34,6 +32,11 @@ io.on("connection", (socket) => {
     console.log("A user connected via socket", socket.id);
 
     // message handling logic here
+    socket.on("setup", (userData) => {
+        socket.join(userData._id); // Join a room specifically for this user
+        socket.emit("connected");
+        console.log("User joined personal room:", userData._id);
+    });
 
     socket.on("disconnect", () => {
         console.log("user disconnected ", socket.id)
@@ -42,6 +45,7 @@ io.on("connection", (socket) => {
 
 app.use(express.json());
 app.use(cors())
+app.set("socketio", io);
 app.use("/user-api",userRouter)
 const connectDB = async()=>{
 
