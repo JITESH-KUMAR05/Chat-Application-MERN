@@ -1,32 +1,41 @@
 import exp from 'express'
 import { MessageModel } from '../Models/MessageModel.js';
+import { verifyToken } from '../middleware/verifyToken.js';
 export const messageRoute = exp.Router()
 
-messageRoute.post('/send/:receiverID', async (req,res) => {
+messageRoute.post('/send', async (req,res) => {
 
-        // console.log()
-        let message =  req.body.content
-        let senderID = req.body.sender
-        if (!message) {
+        const { content, sender, receiver } = req.body;
+        if (!content) {
             return res.status(400).json({ error: "Message content is required" });
         }
+        // if (!receiver && !channel) {
+        //     return res.status(400).json({ error: "Must specify either a receiver or a channel" });
+        // }
 
         // Create the new message document
         const newMessage = new MessageModel({
-            sender: senderID,
-            receiver: req.params.receiverID,
-            content: message,
+            sender,
+            content,
+            ...(receiver && {receiver}),
+            // ...(channel && {channel}),
+            // ...(parent && {parentMessage})
+            
         });
 
         // Save it to MongoDB
         await newMessage.save();
 
         // get the socket io instance
-        const io = req.app.get("socketio")
-
-        // emit the message
-        io.to(req.params.receiverID).emit("message Received",newMessage)
-
+        // const io = req.app.get("socketio")
+// io.to(receiver).to(sender).emit("message Received", newMessage);
+        // if (receiver) {
+        //     // Direct Message -> Send to User's personal room
+        //     io.to(receiver).to(sender).emit("message Received", newMessage);
+        // } else if (channel) {
+        //     // Channel Message -> Send to the Channel's room
+        //     io.to(channel).emit("message Received", newMessage);
+        // }
         // Send the saved message back to the frontend
         res.status(201).json({message:"Message Sent",payload: newMessage});
 
