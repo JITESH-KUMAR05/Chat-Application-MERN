@@ -1,11 +1,11 @@
-import exp  from 'express'
 import dotenv from 'dotenv'
 import {connect} from 'mongoose'
+import {userRouter} from "./APIs/UserAPI.js"
+import express from 'express'
 
 dotenv.config()
 
-const app = exp()
-app.use(exp.json())
+const app = express()
 
 const connectDB = async()=>{
 
@@ -23,3 +23,6 @@ const connectDB = async()=>{
 
 }
 connectDB()
+
+app.use(express.json());
+app.use("/user-api",userRouter)
