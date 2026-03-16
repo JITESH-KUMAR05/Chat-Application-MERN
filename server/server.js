@@ -1,5 +1,8 @@
 import dotenv from 'dotenv'
 import {connect} from 'mongoose'
+import messageRoute from './APIs/MessageAPI.js'
+
+
 import {userRouter} from "./APIs/UserAPI.js"
 import express from 'express'
 
@@ -26,3 +29,4 @@ connectDB()
 
 app.use(express.json());
 app.use("/user-api",userRouter)
+app.use('/message-api',messageRoute)
