@@ -1,9 +1,10 @@
 import React from 'react'
+import AuthPage from './pages/AuthPage'
 
 const App = () => {
   return (
     <div>
-      <h1 className='text-3xl'>App</h1>
+      <AuthPage/>
     </div>
   )
 }
