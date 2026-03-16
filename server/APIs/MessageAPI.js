@@ -3,46 +3,41 @@ import { MessageModel } from '../Models/MessageModel.js';
 import { verifyToken } from '../middleware/verifyToken.js';
 export const messageRoute = exp.Router()
 
-messageRoute.post('/send', async (req,res) => {
+messageRoute.post('/send', verifyToken, async (req,res) => {
 
-        const { content, sender, receiver } = req.body;
+        const { content, receiver } = req.body;
+        const sender = req.user._id;
         if (!content) {
             return res.status(400).json({ error: "Message content is required" });
         }
-        // if (!receiver && !channel) {
-        //     return res.status(400).json({ error: "Must specify either a receiver or a channel" });
-        // }
+        if (!receiver) {
+            return res.status(400).json({ error: "Must specify a receiver" });
+        }
 
         // Create the new message document
         const newMessage = new MessageModel({
             sender,
             content,
-            ...(receiver && {receiver}),
-            // ...(channel && {channel}),
-            // ...(parent && {parentMessage})
+            receiver
             
         });
 
         // Save it to MongoDB
         await newMessage.save();
-
-        // get the socket io instance
-        // const io = req.app.get("socketio")
-// io.to(receiver).to(sender).emit("message Received", newMessage);
-        // if (receiver) {
-        //     // Direct Message -> Send to User's personal room
-        //     io.to(receiver).to(sender).emit("message Received", newMessage);
-        // } else if (channel) {
-        //     // Channel Message -> Send to the Channel's room
-        //     io.to(channel).emit("message Received", newMessage);
-        // }
         // Send the saved message back to the frontend
         res.status(201).json({message:"Message Sent",payload: newMessage});
 
 });
 messageRoute.get('/messages/:id', async (req,res) => {
-    let userID = req.params.id
-    let messages = await MessageModel.find({receiver: userID})
+    let myId = req.user._id;
+    let parter = req.params.id;
+    let messages = await MessageModel.find({
+            $or: [
+                { sender: myId, receiver: chatPartnerId },
+                { sender: chatPartnerId, receiver: myId }
+            ]
+        }).sort({ createdAt: 1 }); // Sort by oldest to newest to build the chat UI
+
     res.status(201).json({message:"List of Messages are:-",payload: messages})
 })
 
