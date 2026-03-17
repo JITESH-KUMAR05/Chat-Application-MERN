@@ -63,8 +63,10 @@ userRouter.post("/login", async (req, res) => {
 
 //update the password if the user knows the previous password
 userRouter.patch('/change-password', verifyToken, async (req, res) => {
+        // Normalize the username to match how it is stored (trimmed and lowercased)
+        const normalizedUsername = req.params.username.trim().toLowerCase();
     //get currentpassword and new password
-    const { email, currentPassword, newPassword } = req.body;
+        const user = await UserModel.findOne({ username: normalizedUsername }).select("-password");
     let user = await UserModel.findOne({ email });
     if(!user) {
         return res.status(401).json({message : "User not found"});
