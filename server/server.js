@@ -89,6 +89,8 @@ const connectDB = async () => {
 
 connectDB();
 
+
+
 // 6. Global Error Handler (MUST BE LAST)
 app.use((err, req, res, next) => {
     console.error("Error details:", err);

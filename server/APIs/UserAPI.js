@@ -39,7 +39,7 @@ userRouter.post("/login", async (req, res) => {
         return;
     }
     //compare passwords
-    const isMatch = await compare(newUserObj.password, user.password);
+    const isMatch =  compare(newUserObj.password, user.password);
     // if password not matched, ask them them to enter correct message
     if(!isMatch) {
         const err = new Error("Invalid password");
