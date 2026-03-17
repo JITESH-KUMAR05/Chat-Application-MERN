@@ -63,11 +63,10 @@ userRouter.post("/login", async (req, res) => {
 
 //update the password if the user knows the previous password
 userRouter.patch('/change-password', verifyToken, async (req, res) => {
-        // Normalize the username to match how it is stored (trimmed and lowercased)
-        const normalizedUsername = req.params.username.trim().toLowerCase();
+    // Normalize the username to match how it is stored (trimmed and lowercased)
+    const normalizedUsername = req.params.username.trim().toLowerCase();
     //get currentpassword and new password
-        const user = await UserModel.findOne({ username: normalizedUsername }).select("-password");
-    let user = await UserModel.findOne({ email });
+    const user = await UserModel.findOne({ username: normalizedUsername }).select("-password");
     if(!user) {
         return res.status(401).json({message : "User not found"});
     }
@@ -88,4 +87,15 @@ userRouter.patch('/change-password', verifyToken, async (req, res) => {
     //return user obj without password
     res.status(200).json({message : "Password Updated Successfully", payload : newUserObj});
     //send res
+});
+
+//logout
+userRouter.get('/logout', async (req, res) => {
+    //Clear the cookie named 'token
+    res.clearCookie('token', {
+        httpOnly : true,
+        secure : false,
+        sameSite : 'lax'
+    })
+    res.status(200).json({message : "logged out successfully"});
 });
