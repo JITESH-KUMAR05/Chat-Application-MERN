@@ -29,6 +29,8 @@
     <!-- Load Socket.io -->
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
     <script>
+        // Connect to the backend
+        const socket = io("http://40.0.42.34:4000");
         let socket;
         const logBox = document.getElementById("logs");
 
