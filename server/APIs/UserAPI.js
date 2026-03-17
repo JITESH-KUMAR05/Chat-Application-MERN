@@ -86,8 +86,12 @@ userRouter.get(
   verifyToken,
   async (req, res) => {
     try {
+      const normalizedUsername = req.params.username
+        .trim()
+        .toLowerCase();
+
       const user = await UserModel.findOne({
-        username: req.params.username,
+        username: normalizedUsername,
       }).select("-password");
 
       if (!user) {
