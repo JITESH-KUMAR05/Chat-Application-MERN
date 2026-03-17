@@ -1,21 +1,42 @@
-export default function Sidebar({ users, selectUser }) {
-  return (
-    <div className="w-64 bg-[#1b3a8a] text-white h-screen p-4">
+export default function Sidebar(){
 
-      <h2 className="text-xl font-bold mb-4">
-        Direct Messages
-      </h2>
+const chats = [
+"General",
+"Development",
+"Design",
+"Alice",
+"Bob",
+"Charlie"
+]
 
-      {users.map((user) => (
-        <div
-          key={user._id}
-          onClick={() => selectUser(user)}
-          className="cursor-pointer p-2 hover:bg-blue-700 rounded"
-        >
-          {user.name}
-        </div>
-      ))}
+return(
 
-    </div>
-  );
+<div className="w-[260px] bg-[#020617] text-white flex flex-col">
+
+{/* TITLE */}
+
+<div className="px-5 py-4 font-semibold text-lg border-b border-blue-900">
+Chats
+</div>
+
+
+{/* CHAT LIST */}
+
+<div className="flex-1 overflow-y-auto">
+
+{chats.map((chat,index)=>(
+<div
+key={index}
+className="px-5 py-3 cursor-pointer hover:text-blue-400 hover:bg-slate-800 transition"
+>
+# {chat}
+</div>
+))}
+
+</div>
+
+</div>
+
+)
+
 }

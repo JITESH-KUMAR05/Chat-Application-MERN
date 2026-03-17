@@ -1,36 +1,85 @@
 import logo from "../assets/logo.png";
+import { useNavigate } from "react-router-dom";
 
-export default function SplashScreen({ goAuth }) {
+export default function SplashScreen(){
 
-  return (
+const navigate = useNavigate();
 
-    <div className="relative flex flex-col items-center justify-center h-screen bg-gradient-to-b from-[#0f235e] to-[#020617] overflow-hidden">
+const goToPage = () => {
+  navigate("/login");
+};
 
-      {/* sparkle particles */}
-      <div className="sparkle sparkle1"></div>
-      <div className="sparkle sparkle2"></div>
-      <div className="sparkle sparkle3"></div>
-      <div className="sparkle sparkle4"></div>
+return (
 
-      {/* rotating logo */}
-      <img
-        src={logo}
-        alt="logo"
-        className="logo-spin mb-8"
-      />
+<div className="flex flex-col items-center justify-center h-screen bg-[#020617] relative overflow-hidden">
 
-      <h1 className="text-white text-4xl font-bold mb-4">
-        Spark Chat
-      </h1>
+{/* smooth white curved section */}
+<div className="absolute bottom-0 w-full overflow-hidden leading-none">
 
-      <button
-        onClick={goAuth}
-        className="px-8 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition"
-      >
-        Get Started
-      </button>
+<svg
+viewBox="0 0 1440 320"
+preserveAspectRatio="none"
+className="block w-full h-[240px]"
+>
 
-    </div>
+<path
+fill="#ffffff"
+d="M0,160 C360,260 1080,60 1440,160 L1440,320 L0,320 Z"
+/>
 
-  );
+</svg>
+
+</div>
+
+{/* glowing background */}
+<div className="absolute w-[500px] h-[500px] bg-blue-700 opacity-20 blur-[150px] rounded-full pointer-events-none"></div>
+
+
+{/* tagline */}
+
+<p className="text-center mb-8 z-10 px-6 leading-relaxed">
+
+<span className="text-blue-400 text-5xl font-extrabold tracking-wide drop-shadow-[0_0_12px_#3b82f6] transition-transform duration-300 hover:scale-125 cursor-pointer">
+
+Spark
+
+</span>
+
+<span className="text-white text-xl ml-3 font-semibold">
+
+– unleash chaos, ignite conversations, and watch the universe of ideas collide in real time.
+
+</span>
+
+</p>
+
+
+{/* logo container */}
+
+<div className="circle-container mb-10 z-10">
+
+<img
+src={logo}
+alt="logo"
+className="logo-image"
+/>
+
+</div>
+
+
+{/* button */}
+
+<button
+onClick={goToPage}
+className="px-8 py-3 bg-white text-black rounded-lg text-lg font-semibold 
+transition-all duration-300 cursor-pointer
+hover:bg-[#020617] hover:text-white hover:scale-110 hover:shadow-[0_0_25px_#3b82f6] z-10"
+>
+Get Started
+</button>
+
+</div>
+
+);
+
 }

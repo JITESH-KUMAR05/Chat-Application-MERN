@@ -4,6 +4,7 @@
   "description": "This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.",
   "main": "eslint.config.js",
   "dependencies": {
+    "@reduxjs/toolkit": "^2.11.2",
     "@tailwindcss/vite": "^4.2.1",
     "acorn": "^8.16.0",
     "acorn-jsx": "^5.3.2",
@@ -96,6 +97,7 @@
     "locate-path": "^6.0.0",
     "lodash.merge": "^4.6.2",
     "lru-cache": "^5.1.1",
+    "lucide-react": "^0.577.0",
     "magic-string": "^0.30.21",
     "math-intrinsics": "^1.1.0",
     "mime-db": "^1.52.0",
@@ -119,6 +121,9 @@
     "punycode": "^2.3.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "react-hook-form": "^7.71.2",
+    "react-hot-toast": "^2.6.0",
+    "react-redux": "^9.2.0",
     "react-router": "^7.13.1",
     "react-router-dom": "^7.13.1",
     "resolve-from": "^4.0.0",
@@ -156,6 +161,9 @@
   "license": "ISC",
   "devDependencies": {
     "@vitejs/plugin-react": "^6.0.1",
+    "autoprefixer": "^10.4.27",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^4.2.1",
     "vite": "^8.0.0"
   }
 }
