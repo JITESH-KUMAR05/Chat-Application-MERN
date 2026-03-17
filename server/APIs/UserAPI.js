@@ -49,7 +49,7 @@ userRouter.post("/login", async (req, res) => {
     res.cookie("token", token, {
         httpOnly : true,
         sameSite : 'none',
-        secure : true
+        secure : false
     });
     const userObj = user.toObject();
     delete userObj.password;
@@ -60,6 +60,7 @@ userRouter.post("/login", async (req, res) => {
 //update the password if the user knows the previous password
 userRouter.patch('/change-password', verifyToken, async (req, res) => {
     let {email,currentPassword,newPassword} = req.body;
+    let user = await UserModel.findOne({email:email});
     if(!user) {
         return res.status(401).json({message : "User not found"});
     }
@@ -83,7 +84,7 @@ userRouter.patch('/change-password', verifyToken, async (req, res) => {
 });
 
 //logout
-userRouter.get('/logout', async (req, res) => {
+userRouter.get('/logout', verifyToken, async (req, res) => {
     //Clear the cookie named 'token
     res.clearCookie('token', {
         httpOnly : true,
