@@ -55,6 +55,13 @@ app.set("socketio", io);
 app.use("/user-api", userRouter);
 app.use('/message-api', messageRoute);
 
+// 5. Invalid Route Handler (AFTER routes)
+app.use((req, res) => {
+    res.status(404).json({
+        message: `${req.path} Invalid Path`
+    });
+});
+
 // 4. Database & Change Stream Logic
 const connectDB = async () => {
     try {
