@@ -1,23 +1,27 @@
-import { useState } from "react";
+import { Routes, Route } from "react-router-dom";
+import ChatWorkspace from "./pages/ChatWorkspace"
+
 import SplashScreen from "./components/SplashScreen";
-import AuthPage from "./pages/AuthPage";
-import ChatPage from "./pages/ChatPage";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 
-function App() {
+function App(){
 
-  const [page,setPage] = useState("splash");
+return(
 
-  if(page === "splash"){
-    return <SplashScreen goAuth={()=>setPage("auth")} />;
-  }
+<Routes>
 
-  if(page === "auth"){
-    return <AuthPage goChat={()=>setPage("chat")} goBack={()=>setPage("splash")} />;
-  }
+<Route path="/" element={<SplashScreen />} />
 
-  if(page === "chat"){
-    return <ChatPage logout={()=>setPage("auth")} />;
-  }
+<Route path="/login" element={<Login />} />
+
+<Route path="/signup" element={<Signup />} />
+
+<Route path="/chat" element={<ChatWorkspace/>}/>
+
+</Routes>
+
+)
 
 }
 

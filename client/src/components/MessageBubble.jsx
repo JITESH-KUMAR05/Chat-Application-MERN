@@ -1,16 +1,15 @@
-export default function MessageBubble({ message }) {
-  return (
-    <div className="mb-3">
+export default function MessageBubble({message}){
 
-      <div className="bg-white p-3 rounded shadow w-fit">
-        <p>{message.content}</p>
+return(
 
-        <span className="text-xs text-gray-500">
-          {new Date(message.createdAt).toLocaleTimeString()}
-        </span>
+<div className="bg-slate-800 p-2 rounded mb-2">
 
-      </div>
+<p className="text-sm text-blue-400">{message.sender?.name}</p>
 
-    </div>
-  );
+<p className="text-white">{message.content}</p>
+
+</div>
+
+)
+
 }
