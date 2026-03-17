@@ -1,16 +1,28 @@
-import SplashScreen from "./components/SplashScreen";
-import AuthPage from "./pages/AuthPage";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
+import ChatWorkspace from "./pages/ChatWorkspace"
 
-function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<SplashScreen />} />
-        <Route path="/enter" element={<AuthPage />} />
-      </Routes>
-    </BrowserRouter>
-  );
+import SplashScreen from "./components/SplashScreen";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+
+function App(){
+
+return(
+
+<Routes>
+
+<Route path="/" element={<SplashScreen />} />
+
+<Route path="/login" element={<Login />} />
+
+<Route path="/signup" element={<Signup />} />
+
+<Route path="/chat" element={<ChatWorkspace/>}/>
+
+</Routes>
+
+)
+
 }
 
 export default App;
