@@ -34,17 +34,13 @@ userRouter.post("/login", async (req, res) => {
     const user = await UserModel.findOne({email: newUserObj.email});
     //if user not exists, ask user to register
     if(!user) {
-        const err = new Error("Invalid email");
-        err.status = 401;
-        return;
+        return res.status(404).json({message:"User not found, please register"})
     }
     //compare passwords
-    const isMatch =  compare(newUserObj.password, user.password);
+    const isMatch =  await compare(newUserObj.password, user.password);
     // if password not matched, ask them them to enter correct message
     if(!isMatch) {
-        const err = new Error("Invalid password");
-        err.status = 401;
-        return;
+        return res.status(401).json({message:"please enter a valid password"})
     }
     //generate token
     const token = jwt.sign({userId:user._id, email: user.email}, process.env.JWT_SECRET, {expiresIn: '1h'});
@@ -53,7 +49,7 @@ userRouter.post("/login", async (req, res) => {
     res.cookie("token", token, {
         httpOnly : true,
         sameSite : 'none',
-        secure : false
+        secure : true
     });
     const userObj = user.toObject();
     delete userObj.password;
