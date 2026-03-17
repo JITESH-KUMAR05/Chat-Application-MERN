@@ -1,14 +1,26 @@
 ### Send Message by User Test
-POST http://localhost:4000/message-api/send/69b79c76c5222bee1869b061
+POST http://40.0.42.34:4000/message-api/send/69b79620be2d5cafc3939044
+Content-Type: application/json
+
+{
+    "sender":"69b79c76c5222bee1869b061",
+    "content": "Hi This is the First Message"
+}
+
+###
+POST http://40.0.54.132:4000/message-api/send
 Content-Type: application/json
 
 {
     "sender":"69b79620be2d5cafc3939044",
-    "content": "Hi This is the First Message"
+    "receiver":"69b79c76c5222bee1869b061",
+    "content": "Hi This is the second Message"
 }
 ### Get Messages
 
 GET http://localhost:4000/message-api/messages/69b79c76c5222bee1869b061
+
+
 ### register
 POST http://localhost:4000/user-api/register
 Content-Type: application/json
@@ -25,5 +37,21 @@ Content-Type: application/json
 
 {
     "email": "test@gmail.com",
-    "password": "test123"
+    "password": "test1234"
 }
+
+### logout
+GET http://localhost:4000/user-api/logout
+
+### change password
+PATCH http://localhost:4000/user-api/change-password
+Content-Type: application/json
+
+{
+    "email": "test2@gmail.com",
+    "currentPassword": "test123",
+    "newPassword": "test1234"
+}
+
+### invalid path
+GET http://localhost:4000/invalid-path
