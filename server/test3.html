@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Socket Chat Test</title>
+
+<style>
+body{
+font-family:Arial;
+width:400px;
+margin:auto;
+}
+
+#messages{
+border:1px solid gray;
+height:300px;
+overflow-y:auto;
+padding:10px;
+margin-bottom:10px;
+}
+
+input{
+width:100%;
+padding:8px;
+margin:5px 0;
+}
+
+button{
+width:100%;
+padding:10px;
+background:#4CAF50;
+color:white;
+border:none;
+cursor:pointer;
+}
+
+button:hover{
+background:#45a049;
+}
+</style>
+
+</head>
+
+<body>
+
+<h2>Real Time Chat Test</h2>
+
+<label>Your User ID</label>
+<input id="senderId" placeholder="Enter your MongoDB userId"/>
+
+<label>Receiver User ID</label>
+<input id="receiverId" placeholder="Enter receiver userId"/>
+
+<div id="messages"></div>
+
+<input id="messageInput" placeholder="Type message"/>
+
+<button onclick="sendMessage()">Send</button>
+
+<script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+
+<script>
+
+const socket = io("http://localhost:4000");
+
+let myUserId = "";
+
+socket.on("connect", () => {
+console.log("Connected socket:", socket.id);
+});
+
+function setupUser(){
+
+myUserId = document.getElementById("senderId").value;
+
+socket.emit("setup",{ _id: myUserId });
+
+console.log("User setup:", myUserId);
+
+}
+
+document.getElementById("senderId").addEventListener("change",setupUser);
+
+socket.on("message Received",(newMessage)=>{
+
+const messagesDiv = document.getElementById("messages");
+
+messagesDiv.innerHTML +=
+`<p><b>${newMessage.sender}</b>: ${newMessage.content}</p>`;
+
+messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+});
+
+function sendMessage(){
+
+const sender = document.getElementById("senderId").value;
+
+const receiver = document.getElementById("receiverId").value;
+
+const content = document.getElementById("messageInput").value;
+
+fetch(`http://localhost:4000/message-api/send/${receiver}`,{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+sender:sender,
+content:content
+})
+})
+.then(res=>res.json())
+.then(data=>{
+console.log("Message sent:",data);
+});
+
+document.getElementById("messageInput").value="";
+
+}
+
+</script>
+
+</body>
+</html>

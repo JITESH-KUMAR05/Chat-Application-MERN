@@ -2,6 +2,7 @@ import express from "express"
 import { UserModel } from "../Models/UserModel.js";
 import {hash, compare} from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import {verifyToken} from '../middleware/verifyToken.js'
 
 export const userRouter = express.Router();
 
@@ -60,18 +61,29 @@ userRouter.post("/login", async (req, res) => {
     res.status(200).json({message : "Login Success", payload : userObj});
 });
 
-// Search for a user by username
-userRouter.get("/search/:username", verifyToken, async (req, res) => {
-    try {
-        // Find the user by username, but exclude their password from the result
-        const user = await UserModel.findOne({ username: req.params.username }).select("-password");
-
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-        res.status(200).json({ message: "User found", payload: user });
-    } catch (err) {
-        res.status(500).json({ error: "Failed to search user" });
+//update the password if the user knows the previous password
+userRouter.patch('/change-password', verifyToken, async (req, res) => {
+    //get currentpassword and new password
+    const { email, currentPassword, newPassword } = req.body;
+    let user = await UserModel.findOne({ email });
+    if(!user) {
+        return res.status(401).json({message : "User not found"});
     }
+    //check the current password is correct or not
+    const isMatch = await compare(currentPassword, user.password);
+    if(!isMatch) {
+        const err = new Error("Invalid password");
+        err.status = 401;
+        throw err;
+    }
+    //replace current password with new password
+    let createdNewPassword = await hash(newPassword, 10);
+    let updated = await UserModel.findOneAndUpdate({ email }, {$set : {"password" : createdNewPassword}}, { new : true });
+    //convert document to object to remove password
+    const newUserObj = updated.toObject();
+    //remove password
+    delete newUserObj.password;
+    //return user obj without password
+    res.status(200).json({message : "Password Updated Successfully", payload : newUserObj});
+    //send res
 });

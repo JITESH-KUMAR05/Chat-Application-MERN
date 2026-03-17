@@ -1,29 +1,36 @@
-import logo from "../assets/logo.png"
+import logo from "../assets/logo.png";
 
-export default function SplashScreen({ onStart }) {
+export default function SplashScreen({ goAuth }) {
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-[#020617] relative overflow-hidden">
 
-      {/* glowing background */}
-      <div className="absolute w-[500px] h-[500px] bg-blue-700 opacity-20 blur-[150px] rounded-full -z-10"></div>
+    <div className="relative flex flex-col items-center justify-center h-screen bg-gradient-to-b from-[#0f235e] to-[#020617] overflow-hidden">
+
+      {/* sparkle particles */}
+      <div className="sparkle sparkle1"></div>
+      <div className="sparkle sparkle2"></div>
+      <div className="sparkle sparkle3"></div>
+      <div className="sparkle sparkle4"></div>
 
       {/* rotating logo */}
       <img
         src={logo}
         alt="logo"
-        className="w-40 h-40 rounded-full object-cover react-spin mb-10"
+        className="logo-spin mb-8"
       />
 
-      {/* button */}
+      <h1 className="text-white text-4xl font-bold mb-4">
+        Spark Chat
+      </h1>
+
       <button
-        onClick={onStart}
-        className="px-8 py-3 bg-white text-black rounded-lg text-lg font-semibold
-        hover:scale-110 transition"
+        onClick={goAuth}
+        className="px-8 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition"
       >
         Get Started
       </button>
 
     </div>
-  ) 
+
+  );
 }
