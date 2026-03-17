@@ -16,3 +16,5 @@ export const getMessages = (id) =>
 
 export const sendMessage = (data) =>
   API.post("/message-api/send", data);
+
+export const getAllUsers = () => API.get("/user-api/users");
