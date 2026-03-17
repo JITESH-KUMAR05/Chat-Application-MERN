@@ -3,12 +3,7 @@ import { MessageModel } from '../Models/MessageModel.js';
 import { verifyToken } from '../middleware/verifyToken.js';
 export const messageRoute = exp.Router()
 
-<<<<<<< HEAD
-
-messageRoute.post('/send/:receiverID', async (req,res) => {
-=======
 messageRoute.post('/send', verifyToken, async (req,res) => {
->>>>>>> 01970f1b661ab0d5514929d1f36e207cb2b84ae2
 
         const { content, receiver } = req.body;
         const sender = req.user._id;
@@ -29,16 +24,6 @@ messageRoute.post('/send', verifyToken, async (req,res) => {
 
         // Save it to MongoDB
         await newMessage.save();
-<<<<<<< HEAD
-
-        // get the socket io instance
-        // const io = req.app.get("socketio")
-
-        // emit the message
-        // io.to(req.params.receiverID).to(senderID).emit("message Received", newMessage);
-
-=======
->>>>>>> 01970f1b661ab0d5514929d1f36e207cb2b84ae2
         // Send the saved message back to the frontend
         res.status(201).json({message:"Message Sent",payload: newMessage});
 
