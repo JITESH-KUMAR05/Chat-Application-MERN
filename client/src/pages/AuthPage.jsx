@@ -1,59 +1,56 @@
 import { useState } from "react";
 import axios from "axios";
+import { useForm } from "react-hook-form";
 
 export default function AuthPage({ goChat, goBack }) {
 
   const [isSignup, setIsSignup] = useState(true);
 
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    password: ""
-  });
+  const { register, handleSubmit, reset } = useForm();
 
-  const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  const signup = async () => {
+  const signup = async (data) => {
     try {
 
       await axios.post(
         "http://localhost:4000/user-api/register",
-        form
+        data
       );
 
       alert("User Registered Successfully");
 
+      reset();
+
       setIsSignup(false);
 
     } catch (error) {
-      console.log(error);
+      console.log(error.response?.data || error);
+      alert("Registration Failed");
     }
   };
 
-  const login = async () => {
+  const login = async (data) => {
     try {
 
       await axios.post(
         "http://localhost:4000/user-api/login",
-        form,
+        data,
         { withCredentials: true }
       );
 
       alert("Login Successful");
 
+      reset();
+
       goChat();
 
     } catch (error) {
-      console.log(error);
+      console.log(error.response?.data || error);
+      alert("Login Failed");
     }
   };
 
   return (
+
     <div className="min-h-screen flex items-center justify-center bg-[#0f235e]">
 
       <div className="bg-slate-100 shadow-2xl rounded-xl p-10 w-96">
@@ -69,38 +66,37 @@ export default function AuthPage({ goChat, goBack }) {
           {isSignup ? "Create Account" : "Welcome Back"}
         </h1>
 
-        {isSignup && (
+        <form onSubmit={handleSubmit(isSignup ? signup : login)}>
+
+          {isSignup && (
+            <input
+              {...register("name")}
+              placeholder="Full Name"
+              className="w-full border p-3 mb-3 rounded-lg"
+            />
+          )}
+
           <input
-            type="text"
-            name="name"
-            placeholder="Full Name"
-            onChange={handleChange}
+            {...register("email")}
+            placeholder="Email Address"
             className="w-full border p-3 mb-3 rounded-lg"
           />
-        )}
 
-        <input
-          type="email"
-          name="email"
-          placeholder="Email Address"
-          onChange={handleChange}
-          className="w-full border p-3 mb-3 rounded-lg"
-        />
+          <input
+            {...register("password")}
+            type="password"
+            placeholder="Password"
+            className="w-full border p-3 mb-4 rounded-lg"
+          />
 
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          onChange={handleChange}
-          className="w-full border p-3 mb-4 rounded-lg"
-        />
+          <button
+            type="submit"
+            className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700"
+          >
+            {isSignup ? "Sign Up" : "Login"}
+          </button>
 
-        <button
-          onClick={isSignup ? signup : login}
-          className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700"
-        >
-          {isSignup ? "Sign Up" : "Login"}
-        </button>
+        </form>
 
         <p className="text-center mt-5 text-sm text-gray-600">
 
@@ -121,5 +117,6 @@ export default function AuthPage({ goChat, goBack }) {
       </div>
 
     </div>
+
   );
 }
