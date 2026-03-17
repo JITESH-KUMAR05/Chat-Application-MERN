@@ -53,7 +53,7 @@ export default function AuthPage({ goChat, goBack }) {
 
     <div className="min-h-screen flex items-center justify-center bg-[#0f235e]">
 
-      <div className="bg-slate-100 shadow-2xl rounded-xl p-10 w-96">
+      <div className="bg-slate-100 shadow-2xl rounded-xl p-10 w-[380px]">
 
         <button
           onClick={goBack}

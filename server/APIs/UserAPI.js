@@ -60,3 +60,18 @@ userRouter.post("/login", async (req, res) => {
     res.status(200).json({message : "Login Success", payload : userObj});
 });
 
+// Search for a user by username
+userRouter.get("/search/:username", verifyToken, async (req, res) => {
+    try {
+        // Find the user by username, but exclude their password from the result
+        const user = await UserModel.findOne({ username: req.params.username }).select("-password");
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.status(200).json({ message: "User found", payload: user });
+    } catch (err) {
+        res.status(500).json({ error: "Failed to search user" });
+    }
+});

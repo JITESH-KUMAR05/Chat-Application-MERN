@@ -28,9 +28,9 @@ messageRoute.post('/send', verifyToken, async (req,res) => {
         res.status(201).json({message:"Message Sent",payload: newMessage});
 
 });
-messageRoute.get('/messages/:id', async (req,res) => {
+messageRoute.get('/messages/:id', verifyToken, async (req,res) => {
     let myId = req.user._id;
-    let parter = req.params.id;
+    let chatPartnerId = req.params.id;
     let messages = await MessageModel.find({
             $or: [
                 { sender: myId, receiver: chatPartnerId },
