@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import express from 'express';
 import http from "http";
+import cookieParser from 'cookie-parser';
 import { connect } from 'mongoose';
 import { Server } from "socket.io";
 import cors from "cors";
@@ -49,6 +50,7 @@ io.on("connection", (socket) => {
 // 2. Middleware
 app.use(cors({ origin: ["http://localhost:5173"], credentials: true }));
 app.use(express.json());
+app.use(cookieParser())
 app.set("socketio", io);
 
 // 3. Routes
@@ -95,6 +97,8 @@ const connectDB = async () => {
 };
 
 connectDB();
+
+
 
 // 6. Global Error Handler (MUST BE LAST)
 app.use((err, req, res, next) => {
