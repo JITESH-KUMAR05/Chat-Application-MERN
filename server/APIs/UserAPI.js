@@ -80,55 +80,15 @@ userRouter.post("/login", async (req, res) => {
   });
 });
 
-// Search user by username
-userRouter.get(
-  "/search/:username",
-  verifyToken,
-  async (req, res) => {
-    try {
-      const normalizedUsername = req.params.username
-        .trim()
-        .toLowerCase();
 
-      const user = await UserModel.findOne({
-        username: normalizedUsername,
-      }).select("-password");
-
-      if (!user) {
-        return res.status(404).json({
-          message: "User not found",
-        });
-      }
-
-      res.status(200).json({
-        message: "User found",
-        payload: user,
-      });
-    } catch (err) {
-      res.status(500).json({
-        error: "Failed to search user",
-      });
-    }
-  }
-);
-
-// Change password
-userRouter.patch(
-  "/change-password",
-  verifyToken,
-  async (req, res) => {
-    const {
-      email,
-      currentPassword,
-      newPassword,
-    } = req.body;
-
-    let user = await UserModel.findOne({ email });
-
-    if (!user) {
-      return res.status(401).json({
-        message: "User not found",
-      });
+//update the password if the user knows the previous password
+userRouter.patch('/change-password', verifyToken, async (req, res) => {
+        // Normalize the username to match how it is stored (trimmed and lowercased)
+        const normalizedUsername = req.params.username.trim().toLowerCase();
+    //get currentpassword and new password
+        const user = await UserModel.findOne({ username: normalizedUsername }).select("-password");
+    if(!user) {
+        return res.status(401).json({message : "User not found"});
     }
 
     const isMatch = await compare(

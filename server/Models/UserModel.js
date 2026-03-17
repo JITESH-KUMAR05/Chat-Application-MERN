@@ -1,39 +1,46 @@
-import {Schema, model} from "mongoose"
-
+import { Schema, model } from "mongoose";
 
 const userSchema = new Schema({
-    name:{
-        type:String,
-        required:true
+    firstName: {
+        type: String,
+        required: true
+    },
+    lastName: {
+        type: String
     },
     username: {              
         type: String,
-        required: true,
         unique: true,
         lowercase: true,
-        trim: true
+        trim: true,
+        // Remove required: true if you want to allow Google users 
+        // to set a username later, or generate one from their email.
     },
-    email:{
-        type:String,
-        required:true,
-        unique:true
+    email: {
+        type: String,
+        required: true,
+        unique: true
     },
-    password:{
-        type:String,
-        required:true,
+    password: {
+        type: String,
+        // Set required only if there is no googleId
+        required: function() { return !this.googleId; } 
     },
-    profilePic:{
-        type:String,
-
+    googleId: {
+        type: String,
+        unique: true,
+        sparse: true // Allows nulls for traditional email/pass users
     },
-    tagLine:{
-        type:String,
+    profilePic: {
+        type: String,
+    },
+    tagLine: {
+        type: String,
     }
-    
-},{
-    strict:"throw",
-    timestamps:true,
-    versionKey:false
-})
+}, {
+    strict: "throw",
+    timestamps: true,
+    versionKey: false
+});
 
-export const UserModel = model("user",userSchema);
+export const UserModel = model("user", userSchema);
