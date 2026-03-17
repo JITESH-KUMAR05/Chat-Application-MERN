@@ -77,7 +77,9 @@ io.on("connection", (socket) => {
 });
 
 app.use(express.json());
-app.use(cors())
+app.use(cors({
+  origin: ["http://localhost:5173"] , credentials:true
+}))
 app.set("socketio", io);
 app.use("/user-api",userRouter)
 const connectDB = async()=>{

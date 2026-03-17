@@ -31,6 +31,9 @@ Content-Type: application/json
     "password": "test123"
 }
 
+### logout
+GET http://localhost:4000/user-api/logout
+
 ### change password
 PATCH http://localhost:4000/user-api/change-password
 Content-Type: application/json

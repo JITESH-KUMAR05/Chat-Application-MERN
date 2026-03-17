@@ -67,7 +67,6 @@ userRouter.patch('/change-password', verifyToken, async (req, res) => {
         const normalizedUsername = req.params.username.trim().toLowerCase();
     //get currentpassword and new password
         const user = await UserModel.findOne({ username: normalizedUsername }).select("-password");
-    let user = await UserModel.findOne({ email });
     if(!user) {
         return res.status(401).json({message : "User not found"});
     }
