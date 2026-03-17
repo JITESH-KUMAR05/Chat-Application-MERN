@@ -89,7 +89,7 @@ const connectDB = async () => {
         });
 
         // 5. Start Server
-        const PORT = process.env.PORT || 5000;
+        const PORT = process.env.PORT || 8080;
         server.listen(PORT, () => console.log("Server Started on Port:- ", PORT));
     } catch (err) {
         console.log("Error in DB Connection", err);
