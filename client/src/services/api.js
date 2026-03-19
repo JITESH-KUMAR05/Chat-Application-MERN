@@ -11,6 +11,7 @@ const api = axios.create({
   withCredentials: true // needed for httpOnly cookies
 });
 
+
 export const registerUser = (data) =>
   api.post("/user-api/register", data);
 
