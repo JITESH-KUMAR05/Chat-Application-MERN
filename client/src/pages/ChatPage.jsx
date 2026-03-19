@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { io } from "socket.io-client";
-import Sidebar from "../components/SideBar";
+import socket from "../services/socket"; 
+import Sidebar from "../components/Sidebar.jsx";
 import ChatWindow from "../components/ChatWindow";
 import MessageInput from "../components/MessageInput";
 // Cleaned up unused import
@@ -10,21 +10,15 @@ export default function ChatPage({ logout, currentUser }) {
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [socket, setSocket] = useState(null);
 
   // 1. Initialize Socket Connection on Load
   useEffect(() => {
-    const newSocket = io("http://localhost:4000", { withCredentials: true });
-    setSocket(newSocket);
-
     // Tell the backend who we are so we join our private room
     if (currentUser) {
-      newSocket.emit("setup", currentUser);
+      socket.emit("setup", currentUser); // Use the imported socket
     }
-
-    // Cleanup socket when user leaves the page
-    return () => newSocket.disconnect();
-  }, [currentUser]);
+  }, [currentUser]); 
+  
 
   // 2. Fetch Users for the Sidebar
   useEffect(() => {

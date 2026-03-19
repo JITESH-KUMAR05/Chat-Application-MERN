@@ -4,7 +4,7 @@ export const verifyToken = async (req, res, next) => {
     try {
         // read token from req
         let token = req.cookies?.token;
-        console.log(token)
+        // console.log(token)
         if(!token) {
             return res.status(401).json({message : "Unauthorized req, Please Login"});
         }
