@@ -19,12 +19,21 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
+const defaultAllowedOrigins = ["http://localhost:5173", "http://127.0.0.1:5501"];
+const envAllowedOrigins = (process.env.CLIENT_URL ?? "")
+    .split(",")
+    .map((origin) => origin.trim().replace(/\/$/, ""))
+    .filter(Boolean);
+
+const allowedOrigins = [...new Set([...defaultAllowedOrigins, ...envAllowedOrigins])];
+const corsOptions = {
+    origin: allowedOrigins,
+    credentials: true,
+};
+
 // 1. Socket.io Setup
 const io = new Server(server, {
-    cors: {
-        origin: ["http://localhost:5173", "http://127.0.0.1:5501"],
-        credentials:true
-    }
+    cors: corsOptions
 });
 
 io.on("connection", (socket) => {
@@ -62,7 +71,7 @@ io.on("connection", (socket) => {
 });
 
 // 2. Middleware
-app.use(cors({ origin: ["http://localhost:5173"], credentials: true }));
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser())
 app.set("socketio", io);
