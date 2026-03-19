@@ -1,5 +1,5 @@
 import { useForm } from "react-hook-form";
-import api from "../services/api";
+import api, { loginUser } from "../services/api";
 import { useDispatch } from "react-redux";
 import { setUser } from "../redux/authSlice";
 import { useNavigate, Link } from "react-router-dom";
@@ -27,8 +27,8 @@ const onSubmit = async(data)=>{
 
 try{
 
-const res = await api.post("/user-api/login", data);
-
+const res = await loginUser(data);
+console.log(res);
 dispatch(setUser(res.data.payload));
 
 navigate("/chat");
@@ -130,7 +130,10 @@ onClick={()=>setShowPassword(!showPassword)}
 
 
 {/* LOGIN BUTTON */}
-
+<Link
+to="/chat"
+className="text-blue-300 hover:underline"
+>
 <button
 className="w-full bg-white text-black py-3 rounded-lg font-semibold 
 transition-all duration-300 mb-4 cursor-pointer
@@ -138,6 +141,7 @@ hover:bg-[#020617] hover:text-white hover:border-2 hover:border-blue-500 hover:s
 >
 Login
 </button>
+</Link>
 
 {/* OR DIVIDER */}
 

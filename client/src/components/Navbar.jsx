@@ -3,7 +3,7 @@ import profile from "../assets/profile.png"
 import { Search } from "lucide-react"
 
 import { useState } from "react"
-import api from "../services/api"
+import api, { searchUsers } from "../services/api"
 
 export default function Navbar(){
 
@@ -11,8 +11,8 @@ const [query,setQuery] = useState("")
 const [users,setUsers] = useState([])
 
 const handleSearch = async(e)=>{
-
-const text = e.target.value
+    const text = e.target.value
+    console.log("search:", text);
 setQuery(text)
 
 if(text.trim()===""){
@@ -22,8 +22,8 @@ return
 
 try{
 
-const res = await api.get(`/user-api/search?username=${text}`)
-
+const res = await searchUsers(text);
+console.log(res);
 setUsers(res.data.payload)
 
 }catch(err){

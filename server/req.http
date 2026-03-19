@@ -18,7 +18,7 @@ Content-Type: application/json
 }
 ### Get Messages
 
-GET http://localhost:4000/message-api/messages/69b79c76c5222bee1869b061
+GET http://localhost:4000/message-api/messages/
 
 
 ### register
@@ -48,10 +48,13 @@ PATCH http://localhost:4000/user-api/change-password
 Content-Type: application/json
 
 {
-    "email": "test2@gmail.com",
+    "email": "test@gmail.com",
     "currentPassword": "test123",
     "newPassword": "test1234"
 }
 
 ### invalid path
 GET http://localhost:4000/invalid-path
+
+### Search user 
+GET http://localhost:4000/user-api/user?search=test

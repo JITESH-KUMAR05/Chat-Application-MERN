@@ -39,7 +39,7 @@ userRouter.post("/login", async (req, res) => {
         return;
     }
     //compare passwords
-    const isMatch =  compare(newUserObj.password, user.password);
+    const isMatch = await compare(newUserObj.password, user.password);
     // if password not matched, ask them them to enter correct message
     if(!isMatch) {
         const err = new Error("Invalid password");
@@ -52,7 +52,7 @@ userRouter.post("/login", async (req, res) => {
     //save the token in httpOnly
     res.cookie("token", token, {
         httpOnly : true,
-        sameSite : 'none',
+        sameSite : 'lax',
         secure : false
     });
     const userObj = user.toObject();
@@ -64,6 +64,7 @@ userRouter.post("/login", async (req, res) => {
 //update the password if the user knows the previous password
 userRouter.patch('/change-password', verifyToken, async (req, res) => {
     let {email,currentPassword,newPassword} = req.body;
+    const user = await UserModel.findOne({email});
     if(!user) {
         return res.status(401).json({message : "User not found"});
     }
@@ -87,12 +88,36 @@ userRouter.patch('/change-password', verifyToken, async (req, res) => {
 });
 
 //logout
-userRouter.get('/logout', async (req, res) => {
+userRouter.get('/logout', verifyToken, async (req, res) => {
     //Clear the cookie named 'token
     res.clearCookie('token', {
         httpOnly : true,
         secure : false,
-        sameSite : 'none'
+        sameSite : 'lax'
     })
     res.status(200).json({message : "logged out successfully"});
 });
+
+//search a user 
+userRouter.get('/user', async (req, res) => {
+  try {
+    const keyword = req.query.search
+      ? {
+          $or: [
+            { firstName: { $regex: req.query.search, $options: "i" } },
+            { lastName: { $regex: req.query.search, $options: "i" } },
+            { email: { $regex: req.query.search, $options: "i" } },
+          ],
+        }
+      : {};
+
+    const users = await UserModel.find(keyword).find({
+      _id: { $ne: req.user.userId },
+    }).select("-password");
+
+    res.status(200).json({payload :users});
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching users" });
+  }
+});
+
