@@ -136,10 +136,11 @@ export default function Navbar() {
       {/* --- RIGHT SIDE: PROFILE & LOGOUT --- */}
       <div className="flex items-center gap-4">
         <img
-          src={profile}
-          alt="My Profile"
-          className="w-10 h-10 rounded-full cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all object-cover"
-        />
+  src={currentUser?.profilePic || profile}
+  alt="My Profile"
+  onClick={() => navigate("/profile")}
+  className="w-10 h-10 rounded-full cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all object-cover"
+/>
         {currentUser && (
           <button
             onClick={handleLogout}

@@ -37,7 +37,16 @@ const userSchema = new Schema({
     },
     tagLine: {
         type: String,
+    },
+  notes: [
+  {
+    text: String,
+    createdAt: {
+      type: Date,
+      default: Date.now
     }
+  }
+],
 }, {
     strict: "throw",
     timestamps: true,

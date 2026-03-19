@@ -4,6 +4,8 @@ import SplashScreen from "./components/SplashScreen";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ChatArea from "./components/ChatArea";
+import ProfilePage from "./pages/ProfilePage";
+import ProtectedRoute from "./utils/protectedRoute"; 
 
 const router = createBrowserRouter([
   {
@@ -38,6 +40,14 @@ const router = createBrowserRouter([
       },
     ],
   },
+  {
+  path: "/profile",
+  element: (
+    <ProtectedRoute>
+      <ProfilePage />
+    </ProtectedRoute>
+  ),
+},
 ]);
 
 function App() {

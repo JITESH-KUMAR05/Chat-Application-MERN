@@ -56,12 +56,12 @@ export const useAuthStore = create(
       },
 
       setUser: (user) =>
-        set({
-          user,
-          isAuthenticated: !!user,
-          loading: false,
-          error: null,
-        }),
+  set(() => ({
+    user,
+    isAuthenticated: !!user,
+    loading: false,
+    error: null,
+  })),
     }),
     {
       name: "auth-storage",
