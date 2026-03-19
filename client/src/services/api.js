@@ -1,20 +1,30 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: "http://localhost:4000",
   withCredentials: true // needed for httpOnly cookies
 });
 
 export const registerUser = (data) =>
-  API.post("/user-api/register", data);
+  api.post("/user-api/register", data);
 
 export const loginUser = (data) =>
-  API.post("/user-api/login", data);
+  api.post("/user-api/login", data);
 
 export const getMessages = (id) =>
-  API.get(`/message-api/messages/${id}`);
+  api.get(`/message-api/messages/${id}`);
 
 export const sendMessage = (data) =>
-  API.post("/message-api/send", data);
+  api.post("/message-api/send", data);
 
-export const getAllUsers = () => API.get("/user-api/users");
+export const getAllUsers = () => api.get("/user-api/user");
+
+export const getSidebarUsers = () => api.get("/message-api/sidebar-users");
+
+export const getMyChannels = () => api.get("/channel-api/my-channels");
+
+export const createChannel = (data) => api.post("/channel-api/create", data);
+
+export const getChannelMessages = (id) => api.get(`/message-api/channel-messages/${id}`);
+
+export default api

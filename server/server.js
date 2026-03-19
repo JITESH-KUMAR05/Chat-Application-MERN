@@ -10,7 +10,9 @@ import jwt from "jsonwebtoken";
 // Route & Model Imports
 import messageRoute from './APIs/MessageAPI.js';
 import { userRouter } from "./APIs/UserAPI.js";
+import { channelRoute } from "./APIs/ChannelAPI.js";
 import { MessageModel } from './Models/MessageModel.js';
+import { ChannelModel } from './Models/ChannelModel.js';
 
 dotenv.config();
 
@@ -28,10 +30,21 @@ const io = new Server(server, {
 io.on("connection", (socket) => {
     console.log("A user connected via socket", socket.id);
 
-    socket.on("setup", (userData) => {
+    socket.on("setup", async (userData) => { // Make async
         if (userData._id) {
             socket.join(userData._id);
             console.log(`User ${userData._id} joined personal room`);
+            
+            // Automatically find all channels this user belongs to and join those rooms!
+            try {
+                const userChannels = await ChannelModel.find({ members: userData._id });
+                userChannels.forEach(channel => {
+                    socket.join(channel._id.toString());
+                    console.log(`User joined channel: ${channel._id}`);
+                });
+            } catch (err) {
+                console.log("Error joining channel rooms", err);
+            }
         }
 
         if (userData.channels && Array.isArray(userData.channels)) {
@@ -57,6 +70,7 @@ app.set("socketio", io);
 // 3. Routes
 app.use("/user-api", userRouter);
 app.use('/message-api', messageRoute);
+app.use('/channel-api', channelRoute);
 
 // 5. Invalid Route Handler (AFTER routes)
 app.use((req, res) => {
@@ -79,11 +93,17 @@ const connectDB = async () => {
                 const populatedMessage = await MessageModel.findById(messageDetails._id)
                     .populate("sender", "firstName lastName email profilePic");
 
+                
+                if (!messageDetails.sender) {
+                    console.log("Skipping socket emit: Message has no sender ID", messageDetails);
+                    return; 
+                }
+
                 if (messageDetails.channel) {
                     io.to(messageDetails.channel.toString()).emit("message Received", populatedMessage);
                 } else if (messageDetails.receiver) {
                     io.to(messageDetails.receiver.toString())
-                      .to(messageDetails.sender.toString())
+                      .to(messageDetails.sender.toString()) // It will never reach here if sender is undefined
                       .emit("message Received", populatedMessage);
                 }
             }

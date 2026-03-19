@@ -6,24 +6,58 @@ import {verifyToken} from '../middleware/verifyToken.js'
 
 export const userRouter = express.Router();
 
+// Check if username is uniquely available
+userRouter.get("/check-username", async (req, res) => {
+    try {
+        const { username } = req.query;
+        if (!username) return res.status(400).json({ available: false });
+        
+        const existing = await UserModel.findOne({ username: username.toLowerCase() });
+        if (existing) {
+            return res.json({ available: false, message: "Username is already taken" });
+        }
+        return res.json({ available: true, message: "Username is available" });
+    } catch (error) {
+        return res.status(500).json({ error: "Server error checking username" });
+    }
+});
+
 //Register the user
 userRouter.post("/register",async(req,res)=>{
-    let userObj = req.body;
+    try {
+        // Sync indexes to fix the old MongoDB duplicate key error for sparse indexes
+        await UserModel.syncIndexes();
 
-    // document
-    let userDoc = new UserModel(userObj);
-    await userDoc.validate();
+        let userObj = req.body;
+        
+        // Remove empty username to trigger sparse index properly
+        if (!userObj.username || userObj.username.trim() === "") {
+            delete userObj.username;
+        }
 
-    // hash the password
-    userDoc.password = await hash(userDoc.password, 12);
-    //save
-    const created = await userDoc.save();
-    //convert document to object to remove password feild
-    const newUserObj = created.toObject();
-    //remove password
-    delete newUserObj.password;
-    //return respnse
-    res.status(201).json({message:"User created",payload:newUserObj});
+        // document
+        let userDoc = new UserModel(userObj);
+        await userDoc.validate();
+
+        // hash the password
+        userDoc.password = await hash(userDoc.password, 12);
+        //save
+        const created = await userDoc.save();
+        //convert document to object to remove password feild
+        const newUserObj = created.toObject();
+        //remove password
+        delete newUserObj.password;
+        //return respnse
+        res.status(201).json({message:"User created",payload:newUserObj});
+    } catch (err) {
+        console.log("Registration Error: ", err);
+        // Handle MongoDB duplicate key errors gracefully
+        if (err.code === 11000) {
+            const field = Object.keys(err.keyPattern)[0];
+            return res.status(409).json({ error: `${field} is already in use.` });
+        }
+        return res.status(500).json({ error: err.message || "Registration failed" });
+    }
 });
 
 //login the user
@@ -49,7 +83,7 @@ userRouter.post("/login", async (req, res) => {
     res.cookie("token", token, {
         httpOnly : true,
         sameSite : 'none',
-        secure : false
+        secure : true
     });
     const userObj = user.toObject();
     delete userObj.password;
@@ -88,8 +122,46 @@ userRouter.get('/logout', verifyToken, async (req, res) => {
     //Clear the cookie named 'token
     res.clearCookie('token', {
         httpOnly : true,
-        secure : false,
+        secure : true,
         sameSite : 'none'
     })
     res.status(200).json({message : "logged out successfully"});
+});
+
+//search a user 
+userRouter.get('/user', verifyToken, async (req, res) => {
+  try {
+    let keyword = {};
+    if (req.query.search) {
+      const searchStr = req.query.search.trim();
+      const searchTerms = searchStr.split(/\s+/);
+      
+      if (searchTerms.length > 1) {
+        // If there's a space, test first name and last name
+        keyword = {
+          $and: [
+            { firstName: { $regex: searchTerms[0], $options: "i" } },
+            { lastName: { $regex: searchTerms[1], $options: "i" } }
+          ]
+        };
+      } else {
+        keyword = {
+          $or: [
+            { firstName: { $regex: searchStr, $options: "i" } },
+            { lastName: { $regex: searchStr, $options: "i" } },
+            { email: { $regex: searchStr, $options: "i" } },
+            { username: { $regex: searchStr, $options: "i" } }
+          ],
+        };
+      }
+    }
+
+    const users = await UserModel.find(keyword).find({
+      _id: { $ne: req.user.userId },
+    }).select("-password");
+
+    res.status(200).json(users);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching users" });
+  }
 });

@@ -13,6 +13,7 @@ const userSchema = new Schema({
         unique: true,
         lowercase: true,
         trim: true,
+        sparse:true,
         // Remove required: true if you want to allow Google users 
         // to set a username later, or generate one from their email.
     },
