@@ -1,4 +1,4 @@
-import {Mongoose, Schema, model} from "mongoose"
+import mongoose, {Mongoose, Schema, model} from "mongoose"
 
 
 const messageSchema = new Schema({
@@ -26,8 +26,19 @@ const messageSchema = new Schema({
     isEdited:{
         type:Boolean,
         default:false,
+    },
+    reactions: {
+        type: [
+            {
+            userId: {
+                type: Schema.Types.ObjectId,
+                ref: "user"
+            },
+            emoji: String
+            }
+        ],
+        default: []
     }
-
 },{
     strict:"throw",
     timestamps:true,

@@ -17,7 +17,7 @@ Content-Type: application/json
 }
 ### Get Messages
 
-GET http://localhost:4000/message-api/messages/69b79c76c5222bee1869b061
+GET http://localhost:4000/message-api/messages/
 
 
 ### register
@@ -70,3 +70,15 @@ Content-Type: application/json
 
 ### invalid path
 GET http://localhost:4000/invalid-path
+
+### Search user 
+GET http://localhost:4000/user-api/user?search=test
+
+### Reaction to message
+POST http://localhost:4000/message-api/messages/69bc2d8b2a79608c777c460a/react
+Content-Type: application/json
+
+{
+    "userId": "69b79c76c5222bee1869b061",
+    "emoji": "like"
+}

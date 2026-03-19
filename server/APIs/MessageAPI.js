@@ -83,6 +83,47 @@ messageRoute.get("/channel-messages/:channelId", verifyToken, async(req,res)=> {
     let allChannelMessage = await MessageModel.find({channel:channelId}).sort({ createdAt: 1 });
 
     res.status(200).json({message:"all channel message",payload:allChannelMessage})
+});
+
+//api for reactions
+messageRoute.post("/messages/:messageId/react", async (req, res) => {
+    //get content from body
+    const { emoji, userId } = req.body;
+    // get message id
+    const { messageId } = req.params;
+    //check whether message exist or not
+    const message = await MessageModel.findById(messageId);
+    //if message not found
+    if (!message) {
+        return res.status(404).json({
+        message: "Message not found"
+        });
+    }
+    if (!message.reactions) {
+      message.reactions = [];
+    }
+    // Check if user already reacted → update
+    const existing = message.reactions.find(r => r.userId.toString() === userId.toString());
+    //if already reacted just update
+    if (existing) {
+        existing.emoji = emoji;
+    } else {
+        message.reactions.push({ userId, emoji });
+    }
+    //save the message
+    await message.save();
+    // Emit real-time update
+    const io = req.app.get("socketio");
+
+    if (message.channel) {
+    io.to(message.channel.toString()).emit("reactionUpdated", message);
+    } else {
+    io.to(message.receiver.toString())
+        .to(message.sender.toString())
+        .emit("reactionUpdated", message);
+    }
+    //send res
+    res.status(200).json({message: "Reaction added successfully", payload:message});
 })
 
 
