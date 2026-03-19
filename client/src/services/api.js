@@ -34,4 +34,7 @@ export const createChannel = (data) => api.post("/channel-api/create", data);
 
 export const getChannelMessages = (id) => api.get(`/message-api/channel-messages/${id}`);
 
+export const reactToMessage = (messageId, data) =>
+  api.post(`/message-api/messages/${messageId}/react`, data);
+
 export default api

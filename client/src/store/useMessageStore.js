@@ -26,7 +26,14 @@ export const useMessageStore = create((set, get) => ({
     }
   },
 
-  setMessages: (messages) => set({ messages }),
+  // setMessages: (messages) => set({ messages }),
+  setMessages: (messages) =>
+  set((state) => ({
+    messages:
+      typeof messages === "function"
+        ? messages(state.messages)
+        : messages,
+  })),
   
   addMessage: (message) => {
     set((state) => {
@@ -45,6 +52,14 @@ export const useMessageStore = create((set, get) => ({
     selectedUser: user,
     unreadCounts: user ? { ...state.unreadCounts, [user._id]: 0 } : state.unreadCounts
   })),
+  
+  updateMessageReaction: (updatedMessage) => {
+    set((state) => ({
+      messages: state.messages.map((msg) =>
+        msg._id === updatedMessage._id ? updatedMessage : msg
+      ),
+    }));
+  },
 
   receiveMessage: (message) => {
     set((state) => {
@@ -98,5 +113,6 @@ export const useMessageStore = create((set, get) => ({
 
     get().loadSidebarUsers();
     get().loadChannels();
+    
   }
 }));

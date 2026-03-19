@@ -1,14 +1,18 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "react-router";
 import { useForm } from "react-hook-form";
 import { sendMessage, getMessages, getChannelMessages } from "../services/api";
 import { useMessageStore } from "../store/useMessageStore";
 import { useAuthStore } from "../store/useAuthStore";
 import MessageBubble from "./MessageBubble"; // Important for showing UI
+import EmojiPicker from "emoji-picker-react";
 
 export default function ChatArea(){
-    const { register, handleSubmit, reset } = useForm();
+    const { register, handleSubmit, watch, setValue, reset } = useForm();
     const loc = useLocation();
+    const [showPicker, setShowPicker] = useState(false);
+    // const messageValue = watch("emoji") || "";
+    const messageValue = watch("message") || "";
     
     // We already dispatched the selected user, let's grab the active chat partner
     const selectedUser = loc.state || null;  
@@ -109,6 +113,20 @@ export default function ChatArea(){
         {/* MESSAGE INPUT */}
         <div className="p-4 bg-white border-t border-gray-200">
             <form onSubmit={handleSubmit(sendMessageHandler)} className="flex items-center gap-3">
+                <div className="relative">
+                    <button type="button" onClick={() => setShowPicker(!showPicker)}>
+                        ➕
+                    </button>
+
+                    {showPicker && (
+                        <div className="absolute bottom-12 z-50">
+                            <EmojiPicker onEmojiClick={(emoji) => {
+                                // setValue("emoji", messageValue + emoji.emoji);
+                                setValue("message", messageValue + emoji.emoji);
+                            }} />
+                        </div>
+                    )}
+                </div>
                 <input 
                     {...register("message", { required: true })} 
                     type="text" 
