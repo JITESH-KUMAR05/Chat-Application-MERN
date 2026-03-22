@@ -3,6 +3,7 @@ import { useState } from "react";
 import EmojiPicker from "emoji-picker-react";
 import { reactToMessage } from "../services/api";
 import { useMessageStore } from "../store/useMessageStore";
+import ReactionPopup from "./ReactionPopup";
 
 export default function MessageBubble({ message }) {
 
@@ -13,6 +14,7 @@ export default function MessageBubble({ message }) {
     const isOwnMessage = senderId === user?._id;
     const [showReactions, setShowReactions] = useState(false);
     const [showPicker, setShowPicker] = useState(false);
+    const [showReactionPopup, setShowReactionPopup] = useState(false);
 
     // Quick emojis
     const quickEmojis = ["👍", "❤️", "😂", "😮", "😢"];
@@ -35,7 +37,7 @@ export default function MessageBubble({ message }) {
         };
         console.log("Updated reaction", updatedMessage);
         updateMessageReaction(updatedMessage);
-        // 🔥 2. Then call backend
+        //  2. Then call backend
         await reactToMessage(message._id, {
           userId: user._id,
           emoji,
@@ -118,12 +120,24 @@ export default function MessageBubble({ message }) {
           const firstEmoji = message.reactions[0].emoji;
 
           return (
-            <div className="absolute -bottom-3 right-2 bg-gray-700 text-white px-2 py-[2px] rounded-full text-xs flex items-center gap-1 shadow">
-              <span>{firstEmoji}</span>
-              <span>{totalCount}</span>
+            <div
+                onClick={() => setShowReactionPopup(true)}
+                className="absolute -bottom-3 right-2 bg-gray-700 text-white px-2 py-[2px] rounded-full text-xs flex items-center gap-1 shadow cursor-pointer hover:scale-105"
+            >
+                <span>{firstEmoji}</span>
+                <span>{totalCount}</span>
             </div>
+            
           );
         })()}
+
+        {showReactionPopup && (
+          <ReactionPopup
+            reactions={message.reactions}
+            messageId={message._id}
+            onClose={() => setShowReactionPopup(false)}
+          />
+        )}
       </div>
     </div>
   );
