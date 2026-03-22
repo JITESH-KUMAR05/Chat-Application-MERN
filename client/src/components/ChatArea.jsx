@@ -6,12 +6,12 @@ import { useMessageStore } from "../store/useMessageStore";
 import { useAuthStore } from "../store/useAuthStore";
 import MessageBubble from "./MessageBubble"; // Important for showing UI
 import EmojiPicker from "emoji-picker-react";
+import socket from "../services/socket";
 
 export default function ChatArea(){
     const { register, handleSubmit, watch, setValue, reset } = useForm();
     const loc = useLocation();
     const [showPicker, setShowPicker] = useState(false);
-    // const messageValue = watch("emoji") || "";
     const messageValue = watch("message") || "";
     
     // We already dispatched the selected user, let's grab the active chat partner
@@ -72,6 +72,19 @@ export default function ChatArea(){
             console.error("Error sending message:", err);
         }
     }
+
+    useEffect(() => {
+        socket.on("reactionUpdated", (updatedMessage) => {
+            console.log("reaction received", updatedMessage);
+            setMessages((prev) =>
+            prev.map((msg) =>
+                msg._id === updatedMessage._id ? updatedMessage : msg
+            )
+            );
+        });
+
+        return () => socket.off("reactionUpdated");
+    }, []);
 
     if (!selectedUser) {
         return (

@@ -56,7 +56,7 @@ export const useMessageStore = create((set, get) => ({
   updateMessageReaction: (updatedMessage) => {
     set((state) => ({
       messages: state.messages.map((msg) =>
-        msg._id === updatedMessage._id ? updatedMessage : msg
+        msg._id.toString() === updatedMessage._id.toString() ? updatedMessage : msg
       ),
     }));
   },
