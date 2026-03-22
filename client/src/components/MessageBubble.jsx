@@ -2,6 +2,8 @@ import { useAuthStore } from "../store/useAuthStore"
 import { useState } from "react";
 import EmojiPicker from "emoji-picker-react";
 import { reactToMessage } from "../services/api";
+import { useMessageStore } from "../store/useMessageStore";
+import ReactionPopup from "./ReactionPopup";
 
 export default function MessageBubble({ message }) {
 
@@ -12,23 +14,40 @@ export default function MessageBubble({ message }) {
     const isOwnMessage = senderId === user?._id;
     const [showReactions, setShowReactions] = useState(false);
     const [showPicker, setShowPicker] = useState(false);
+    const [showReactionPopup, setShowReactionPopup] = useState(false);
 
     // Quick emojis
     const quickEmojis = ["👍", "❤️", "😂", "😮", "😢"];
     // Send reaction to backend
-      const sendReaction = async (emoji) => {
-        try {
-          await reactToMessage(message._id, {
-            userId: user._id,
-            emoji,
-          });
+    const updateMessageReaction = useMessageStore(
+      (state) => state.updateMessageReaction
+    );
 
-          setShowReactions(false);
-          setShowPicker(false);
-        } catch (err) {
-          console.error("Reaction error:", err);
-        }
-      };
+    const sendReaction = async (emoji) => {
+      try {
+        // 🔥 1. Optimistically update UI FIRST
+        const updatedMessage = {
+          ...message,
+          reactions: [
+            ...(message.reactions || []).filter(
+              (r) => r.userId !== user._id
+            ),
+            { userId: user._id, emoji }
+          ]
+        };
+        console.log("Updated reaction", updatedMessage);
+        updateMessageReaction(updatedMessage);
+        //  2. Then call backend
+        await reactToMessage(message._id, {
+          userId: user._id,
+          emoji,
+        });
+        setShowReactions(false);
+        setShowPicker(false);
+      } catch (err) {
+        console.error("Reaction error:", err);
+      }
+    };
 
       // Count reactions
       const reactionCounts = {};
@@ -86,7 +105,9 @@ export default function MessageBubble({ message }) {
 
         {/* EMOJI PICKER */}
         {showPicker && (
-          <div className="absolute bottom-12 right-0 z-50">
+          <div className={`absolute bottom-12 right-0 z-50 ${
+            isOwnMessage ? "right-0" : "left-0"
+          }`}>
             <EmojiPicker
               onEmojiClick={(emoji) => sendReaction(emoji.emoji)}
             />
@@ -99,12 +120,24 @@ export default function MessageBubble({ message }) {
           const firstEmoji = message.reactions[0].emoji;
 
           return (
-            <div className="absolute -bottom-3 right-2 bg-gray-700 text-white px-2 py-[2px] rounded-full text-xs flex items-center gap-1 shadow">
-              <span>{firstEmoji}</span>
-              <span>{totalCount}</span>
+            <div
+                onClick={() => setShowReactionPopup(true)}
+                className="absolute -bottom-3 right-2 bg-gray-700 text-white px-2 py-[2px] rounded-full text-xs flex items-center gap-1 shadow cursor-pointer hover:scale-105"
+            >
+                <span>{firstEmoji}</span>
+                <span>{totalCount}</span>
             </div>
+            
           );
         })()}
+
+        {showReactionPopup && (
+          <ReactionPopup
+            reactions={message.reactions}
+            messageId={message._id}
+            onClose={() => setShowReactionPopup(false)}
+          />
+        )}
       </div>
     </div>
   );

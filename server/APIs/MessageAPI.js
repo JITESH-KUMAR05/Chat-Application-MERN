@@ -37,7 +37,7 @@ messageRoute.get('/messages/:id', verifyToken, async (req,res) => {
                 { sender: myId, receiver: chatPartnerId },
                 { sender: chatPartnerId, receiver: myId }
             ]
-        }).sort({ createdAt: 1 }); // Sort by oldest to newest to build the chat UI
+        }).sort({ createdAt: 1 }).populate("reactions.userId", "username lastName email"); // Sort by oldest to newest to build the chat UI
 
     res.status(200).json({message:"List of Messages:",payload: messages})
 })
@@ -80,7 +80,7 @@ messageRoute.get("/sidebar-users", verifyToken, async(req,res) => {
 messageRoute.get("/channel-messages/:channelId", verifyToken, async(req,res)=> {
     let channelId = req.params?.channelId;
     // find all the messages from this channel
-    let allChannelMessage = await MessageModel.find({channel:channelId}).sort({ createdAt: 1 });
+    let allChannelMessage = await MessageModel.find({channel:channelId}).sort({ createdAt: 1 }).populate("reactions.userId", "username lastName email");
 
     res.status(200).json({message:"all channel message",payload:allChannelMessage})
 });
@@ -102,28 +102,36 @@ messageRoute.post("/messages/:messageId/react", async (req, res) => {
     if (!message.reactions) {
       message.reactions = [];
     }
-    // Check if user already reacted → update
-    const existing = message.reactions.find(r => r.userId.toString() === userId.toString());
-    //if already reacted just update
-    if (existing) {
-        existing.emoji = emoji;
+    // // Check if user already reacted → update
+    const existingIndex = message.reactions.findIndex(r => r.userId.toString() === userId.toString());
+
+    if (existingIndex !== -1) {
+        const existing = message.reactions[existingIndex];
+
+        if (existing.emoji === emoji) {
+            message.reactions.splice(existingIndex, 1);
+        } else {
+            existing.emoji = emoji;
+        }
     } else {
+        // ✅ ADD
         message.reactions.push({ userId, emoji });
     }
     //save the message
     await message.save();
+    const updatedMessage = await MessageModel.findById(messageId).populate("reactions.userId", "username firstName email");
     // Emit real-time update
     const io = req.app.get("socketio");
 
     if (message.channel) {
-    io.to(message.channel.toString()).emit("reactionUpdated", message);
+    io.to(message.channel.toString()).emit("reactionUpdated", updatedMessage);
     } else {
     io.to(message.receiver.toString())
         .to(message.sender.toString())
-        .emit("reactionUpdated", message);
+        .emit("reactionUpdated", updatedMessage);
     }
     //send res
-    res.status(200).json({message: "Reaction added successfully", payload:message});
+    res.status(200).json({message: "Reaction added successfully", payload:updatedMessage});
 })
 
 
