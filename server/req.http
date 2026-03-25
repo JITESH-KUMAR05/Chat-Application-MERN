@@ -55,3 +55,6 @@ Content-Type: application/json
 
 ### invalid path
 GET http://localhost:4000/invalid-path
+
+### 
+GET http://localhost:4000/user-api/user?search=test

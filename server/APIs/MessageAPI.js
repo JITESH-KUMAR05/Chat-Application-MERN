@@ -6,7 +6,7 @@ export const messageRoute = exp.Router()
 messageRoute.post('/send', verifyToken, async (req,res) => {
 
         const { content, receiver } = req.body;
-        const sender = req.user._id;
+        const sender = req.user.userId;
         if (!content) {
             return res.status(400).json({ error: "Message content is required" });
         }
@@ -16,9 +16,9 @@ messageRoute.post('/send', verifyToken, async (req,res) => {
 
         // Create the new message document
         const newMessage = new MessageModel({
-            sender,
-            content,
-            receiver
+            sender: sender,
+            content: content,
+            receiver: receiver
             
         });
 
@@ -28,17 +28,23 @@ messageRoute.post('/send', verifyToken, async (req,res) => {
         res.status(201).json({message:"Message Sent",payload: newMessage});
 
 });
-messageRoute.get('/messages/:id', verifyToken, async (req,res) => {
-    let myId = req.user._id;
-    let chatPartnerId = req.params.id;
-    let messages = await MessageModel.find({
+messageRoute.get('/messages/:id', verifyToken, async (req, res) => {
+    try {
+        let myId = req.user._id;
+        let chatPartnerId = req.params.id;
+        
+        let messages = await MessageModel.find({
             $or: [
                 { sender: myId, receiver: chatPartnerId },
                 { sender: chatPartnerId, receiver: myId }
             ]
-        }).sort({ createdAt: 1 }); // Sort by oldest to newest to build the chat UI
+        }).sort({ createdAt: 1 });
 
-    res.status(201).json({message:"List of Messages are:-",payload: messages})
-})
-
+        res.status(200).json({ message: "List of Messages", payload: messages });
+        
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Failed to fetch messages" });
+    }
+});
 export default messageRoute;

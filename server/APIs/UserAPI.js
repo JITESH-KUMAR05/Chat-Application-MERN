@@ -53,12 +53,35 @@ userRouter.post("/login", async (req, res) => {
     res.cookie("token", token, {
         httpOnly : true,
         sameSite : 'none',
-        secure : false
+        secure : true
     });
     const userObj = user.toObject();
     delete userObj.password;
     //send res
-    res.status(200).json({message : "Login Success", payload : userObj});
+    return res.status(200).json({message : "Login Success", payload : userObj});
+});
+
+//search a user 
+userRouter.get('/user', verifyToken, async (req, res) => {
+  try {
+    const keyword = req.query.search
+      ? {
+          $or: [
+            { firstName: { $regex: req.query.search, $options: "i" } },
+            { lastName: { $regex: req.query.search, $options: "i" } },
+            { email: { $regex: req.query.search, $options: "i" } },
+          ],
+        }
+      : {};
+
+    const users = await UserModel.find(keyword).find({
+      _id: { $ne: req.user._id },
+    }).select("-password");
+
+    res.status(200).json(users);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching users" });
+  }
 });
 
 //update the password if the user knows the previous password

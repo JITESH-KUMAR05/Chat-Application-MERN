@@ -1,6 +1,7 @@
 import Sidebar from "../components/Sidebar"
 import Navbar from "../components/Navbar"
 import ChatArea from "../components/ChatArea"
+import { Outlet } from "react-router"
 
 export default function ChatLayout(){
 
@@ -18,8 +19,9 @@ return(
 <Sidebar/>
 
 {/* CHAT CONTENT */}
+<Outlet>
 <ChatArea/>
-
+</Outlet>
 </div>
 
 </div>

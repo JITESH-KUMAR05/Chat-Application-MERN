@@ -26,7 +26,8 @@ const onSubmit = async(data)=>{
 try{
 
 await api.post("/user-api/register",{
-name: data.firstName + " " + (data.lastName || ""),
+firstName: data.firstName,
+lastName: data.lastName,
 email:data.email,
 password:data.password,
 profilePic:data.profilePic,

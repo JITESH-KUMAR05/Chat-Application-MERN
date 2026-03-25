@@ -20,31 +20,47 @@ const server = http.createServer(app);
 // 1. Socket.io Setup
 const io = new Server(server, {
     cors: {
-        origin: ["http://localhost:5173", "http://127.0.0.1:5501"]
+        origin: ["http://localhost:5173", "http://127.0.0.1:5501"],
+        methods: ["GET","POST"],
+        credentials: true
     }
 });
 
+io.use((socket, next) => {
+  try {
+    // 1. Grab the raw cookies from the socket connection
+    const cookieString = socket.handshake.headers.cookie;
+    if (!cookieString) throw new Error("No cookies found");
+
+    // 2. Isolate the specific 'token=' cookie
+    const tokenCookie = cookieString.split('; ').find(row => row.startsWith('token='));
+    if (!tokenCookie) throw new Error("No token cookie found");
+
+    // 3. Extract the actual JWT string
+    const token = tokenCookie.split('=')[1];
+
+    // 4. Verify it just like your Express route does
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // 5. Attach the user's ID to the socket object!
+    socket.userId = decoded.userId; 
+    next(); // Let them in!
+
+  } catch (err) {
+    console.log("Socket connection rejected:", err.message);
+    next(new Error("Authentication error"));
+  }
+});
+
 io.on("connection", (socket) => {
-    console.log("A user connected via socket", socket.id);
+  
+  console.log("Socket connected! User assigned to room:", socket.userId);
+  
+  socket.join(socket.userId);
 
-    socket.on("setup", (userData) => {
-        if (userData._id) {
-            socket.join(userData._id);
-            console.log(`User ${userData._id} joined personal room`);
-        }
-
-        if (userData.channels && Array.isArray(userData.channels)) {
-            userData.channels.forEach(channelId => {
-                socket.join(channelId);
-                console.log(`User joined channel: ${channelId}`);
-            });
-        }
-        socket.emit("connected");
-    });
-
-    socket.on("disconnect", () => {
-        console.log("user disconnected ", socket.id);
-    });
+  socket.on("disconnect", () => {
+    console.log("User disconnected:", socket.userId);
+  });
 });
 
 // 2. Middleware
@@ -70,26 +86,31 @@ const connectDB = async () => {
         await connect(process.env.MONGO_URI);
         console.log("DB Connection Successful");
 
+        
         const messageChangeStream = MessageModel.watch();
 
-        messageChangeStream.on('change', async (change) => {
-            if (change.operationType === 'insert') {
+        messageChangeStream.on("change", (change) => {
+            
+            // 1. ONLY proceed if a brand new message was inserted
+            if (change.operationType === "insert") {
                 const messageDetails = change.fullDocument;
-                const populatedMessage = await MessageModel.findById(messageDetails._id)
-                    .populate("sender", "firstName lastName email profilePic");
 
-                if (messageDetails.channel) {
-                    io.to(messageDetails.channel.toString()).emit("message Received", populatedMessage);
-                } else if (messageDetails.receiver) {
+                // 2. Safety check: ensure both sender and receiver exist before emitting
+                if (messageDetails && messageDetails.sender && messageDetails.receiver) {
+                    
+                    // 3. Safely emit to the specific rooms
                     io.to(messageDetails.receiver.toString())
-                      .to(messageDetails.sender.toString())
-                      .emit("message Received", populatedMessage);
+                    .to(messageDetails.sender.toString())
+                    .emit("message Received", messageDetails);
+                    
+                } else {
+                    console.log("Change stream skipped: Missing sender/receiver details");
                 }
             }
         });
 
         // 5. Start Server
-        const PORT = process.env.PORT || 5000;
+        const PORT = process.env.PORT || 8080;
         server.listen(PORT, () => console.log("Server Started on Port:- ", PORT));
     } catch (err) {
         console.log("Error in DB Connection", err);
