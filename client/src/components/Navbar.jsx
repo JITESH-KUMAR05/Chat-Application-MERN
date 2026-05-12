@@ -1,17 +1,32 @@
 import { useState } from "react";
-import { Search, X } from "lucide-react"; // Imported 'X' for a clear button
+import { Search, X, LogOut } from "lucide-react"; // Imported 'X' for a clear button
 import api from "../services/api";
 
 import logo from "../assets/logo.png";
 import profile from "../assets/profile.png";
 import { useNavigate } from "react-router";
+import { useMessageStore } from "../store/useMessageStore";
+import { useAuthStore } from "../store/useAuthStore";
 
 export default function Navbar() {
+  const setSelectedUser = useMessageStore(state => state.setSelectedUser);
+  const currentUser = useAuthStore(state => state.user);
+  const logout = useAuthStore(state => state.logout);
   const [query, setQuery] = useState("");
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate()
+
+  const handleLogout = async () => {
+    try {
+      await api.get('/user-api/logout');
+      logout();
+      navigate('/login');
+    } catch (err) {
+      console.error("Logout failed:", err);
+    }
+  };
 
   const handleSearch = async (e) => {
     const text = e.target.value;
@@ -89,19 +104,24 @@ export default function Navbar() {
                   key={user._id}
                   className="px-4 py-3 cursor-pointer hover:bg-slate-800 transition-colors border-b border-slate-800 last:border-0 flex items-center gap-3"
                   onClick={() => {
-                    navigate(`${user._id}`,{state:user})
-                     // We will add the chat selection logic here later
-                     console.log("Clicked to chat with:", user.firstName);
+                     // 1. Tell Zustand this user is active
+                     setSelectedUser(user);
+                     // 2. Navigate to that chat view
+                     navigate(`/chat/${user._id}`, { state: user });
+                     // 3. Clear the search dropdown
                      clearSearch(); 
                   }}
                 >
                   <img
                     src={user.profilePic || profile}
-                    alt={user.name}
+                    alt={user.firstName}
                     className="w-8 h-8 rounded-full object-cover"
                   />
                   <div className="flex flex-col">
-                    <span className="text-white text-sm font-medium">{user.firstName}</span>
+                    <span className="text-white text-sm font-medium">
+                      {user.firstName} {user.lastName || ""}
+                    </span>
+                    {user.username && <span className="text-xs text-gray-400">@{user.username}</span>}
                   </div>
                 </div>
               ))
@@ -113,12 +133,24 @@ export default function Navbar() {
         )}
       </div>
 
-      {/* --- RIGHT SIDE: PROFILE --- */}
-      <img
-        src={profile}
-        alt="My Profile"
-        className="w-10 h-10 rounded-full cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all object-cover"
-      />
+      {/* --- RIGHT SIDE: PROFILE & LOGOUT --- */}
+      <div className="flex items-center gap-4">
+        <img
+  src={currentUser?.profilePic || profile}
+  alt="My Profile"
+  onClick={() => navigate("/profile")}
+  className="w-10 h-10 rounded-full cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all object-cover"
+/>
+        {currentUser && (
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-500 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+          >
+            <LogOut size={18} />
+            <span className="hidden md:inline">Logout</span>
+          </button>
+        )}
+      </div>
     </div>
   );
 }

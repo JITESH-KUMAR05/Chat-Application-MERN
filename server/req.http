@@ -8,17 +8,16 @@ Content-Type: application/json
 }
 
 ###
-POST http://40.0.54.132:4000/message-api/send
+POST http://localhost:4000/message-api/send
 Content-Type: application/json
 
 {
-    "sender":"69b79620be2d5cafc3939044",
     "receiver":"69b79c76c5222bee1869b061",
     "content": "Hi This is the second Message"
 }
 ### Get Messages
 
-GET http://localhost:4000/message-api/messages/69b79c76c5222bee1869b061
+GET http://localhost:4000/message-api/messages/
 
 
 ### register
@@ -37,24 +36,49 @@ Content-Type: application/json
 
 {
     "email": "test@gmail.com",
-    "password": "test1234"
+    "password": "test123"
 }
+
+
+### Login using Azure
+POST https://chat-app-api-fmbegkegfwayc0dk.canadacentral-01.azurewebsites.net/user-api/login
+Content-Type: application/json
+
+{
+    "email": "test@gmail.com",
+    "password": "test123"
+}
+
 
 ### logout
 GET http://localhost:4000/user-api/logout
+
+
+### logout azure
+GET https://chat-app-api-fmbegkegfwayc0dk.canadacentral-01.azurewebsites.net/user-api/logout
+
 
 ### change password
 PATCH http://localhost:4000/user-api/change-password
 Content-Type: application/json
 
 {
-    "email": "test2@gmail.com",
-    "currentPassword": "test123",
-    "newPassword": "test1234"
+    "email": "test@gmail.com",
+    "currentPassword": "test1234",
+    "newPassword": "test12345"
 }
 
 ### invalid path
 GET http://localhost:4000/invalid-path
 
-### 
+### Search user 
 GET http://localhost:4000/user-api/user?search=test
+
+### Reaction to message
+POST http://localhost:4000/message-api/messages/69bc2d8b2a79608c777c460a/react
+Content-Type: application/json
+
+{
+    "userId": "69b79c76c5222bee1869b061",
+    "emoji": "like"
+}

@@ -10,53 +10,60 @@ import jwt from "jsonwebtoken";
 // Route & Model Imports
 import messageRoute from './APIs/MessageAPI.js';
 import { userRouter } from "./APIs/UserAPI.js";
+import { channelRoute } from "./APIs/ChannelAPI.js";
 import { MessageModel } from './Models/MessageModel.js';
+import { ChannelModel } from './Models/ChannelModel.js';
 
 dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
 
+const defaultAllowedOrigins = ["http://localhost:5173", "http://127.0.0.1:5501"];
+const envAllowedOrigins = (process.env.CLIENT_URL ?? "")
+    .split(",")
+    .map((origin) => origin.trim().replace(/\/$/, ""))
+    .filter(Boolean);
+
+const allowedOrigins = [...new Set([...defaultAllowedOrigins, ...envAllowedOrigins])];
+const corsOptions = {
+    origin: allowedOrigins,
+    credentials: true,
+};
+
 // 1. Socket.io Setup
 const io = new Server(server, {
-    cors: {
-        origin: ["http://localhost:5173", "http://127.0.0.1:5501"],
-        methods: ["GET","POST"],
-        credentials: true
-    }
-});
-
-io.use((socket, next) => {
-  try {
-    // 1. Grab the raw cookies from the socket connection
-    const cookieString = socket.handshake.headers.cookie;
-    if (!cookieString) throw new Error("No cookies found");
-
-    // 2. Isolate the specific 'token=' cookie
-    const tokenCookie = cookieString.split('; ').find(row => row.startsWith('token='));
-    if (!tokenCookie) throw new Error("No token cookie found");
-
-    // 3. Extract the actual JWT string
-    const token = tokenCookie.split('=')[1];
-
-    // 4. Verify it just like your Express route does
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
-    // 5. Attach the user's ID to the socket object!
-    socket.userId = decoded.userId; 
-    next(); // Let them in!
-
-  } catch (err) {
-    console.log("Socket connection rejected:", err.message);
-    next(new Error("Authentication error"));
-  }
+    cors: corsOptions
 });
 
 io.on("connection", (socket) => {
-  
-  console.log("Socket connected! User assigned to room:", socket.userId);
-  
-  socket.join(socket.userId);
+    console.log("A user connected via socket", socket.id);
+
+    socket.on("setup", async (userData) => { // Make async
+        if (userData._id) {
+            socket.join(userData._id);
+            console.log(`User ${userData._id} joined personal room`);
+            
+            // Automatically find all channels this user belongs to and join those rooms!
+            try {
+                const userChannels = await ChannelModel.find({ members: userData._id });
+                userChannels.forEach(channel => {
+                    socket.join(channel._id.toString());
+                    console.log(`User joined channel: ${channel._id}`);
+                });
+            } catch (err) {
+                console.log("Error joining channel rooms", err);
+            }
+        }
+
+        if (userData.channels && Array.isArray(userData.channels)) {
+            userData.channels.forEach(channelId => {
+                socket.join(channelId);
+                console.log(`User joined channel: ${channelId}`);
+            });
+        }
+        socket.emit("connected");
+    });
 
   socket.on("disconnect", () => {
     console.log("User disconnected:", socket.userId);
@@ -64,7 +71,7 @@ io.on("connection", (socket) => {
 });
 
 // 2. Middleware
-app.use(cors({ origin: ["http://localhost:5173"], credentials: true }));
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser())
 app.set("socketio", io);
@@ -72,6 +79,7 @@ app.set("socketio", io);
 // 3. Routes
 app.use("/user-api", userRouter);
 app.use('/message-api', messageRoute);
+app.use('/channel-api', channelRoute);
 
 // 5. Invalid Route Handler (AFTER routes)
 app.use((req, res) => {
@@ -94,17 +102,21 @@ const connectDB = async () => {
             // 1. ONLY proceed if a brand new message was inserted
             if (change.operationType === "insert") {
                 const messageDetails = change.fullDocument;
+                const populatedMessage = await MessageModel.findById(messageDetails._id)
+                    .populate("sender", "firstName lastName email profilePic");
 
-                // 2. Safety check: ensure both sender and receiver exist before emitting
-                if (messageDetails && messageDetails.sender && messageDetails.receiver) {
-                    
-                    // 3. Safely emit to the specific rooms
+                
+                if (!messageDetails.sender) {
+                    console.log("Skipping socket emit: Message has no sender ID", messageDetails);
+                    return; 
+                }
+
+                if (messageDetails.channel) {
+                    io.to(messageDetails.channel.toString()).emit("message Received", populatedMessage);
+                } else if (messageDetails.receiver) {
                     io.to(messageDetails.receiver.toString())
-                    .to(messageDetails.sender.toString())
-                    .emit("message Received", messageDetails);
-                    
-                } else {
-                    console.log("Change stream skipped: Missing sender/receiver details");
+                      .to(messageDetails.sender.toString()) // It will never reach here if sender is undefined
+                      .emit("message Received", populatedMessage);
                 }
             }
         });
