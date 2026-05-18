@@ -1,18 +1,59 @@
 import axios from "axios";
 
-const API = axios.create({
-  baseURL: "http://localhost:4000",
-  withCredentials: true
+// Base URL
+const API_BASE_URL = (
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_SOCKET_URL ||
+  "http://localhost:4000"
+).replace(/\/$/, "");
+
+// Axios instance
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  withCredentials: true, // needed for httpOnly cookies
 });
 
+// ================= USER APIs =================
+
 export const registerUser = (data) =>
-  API.post("/user-api/register", data);
+  api.post("/user-api/register", data);
 
 export const loginUser = (data) =>
-  API.post("/user-api/login", data);
+  api.post("/user-api/login", data);
+
+export const getAllUsers = () =>
+  api.get("/user-api/user");
+
+// ================= MESSAGE APIs =================
 
 export const getMessages = (id) =>
-  API.get(`/message-api/messages/${id}`);
+  api.get(`/message-api/messages/${id}`);
 
 export const sendMessage = (data) =>
-  API.post("/message-api/send", data);
+  api.post("/message-api/send", data, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+export const reactToMessage = (messageId, data) =>
+  api.post(`/message-api/messages/${messageId}/react`, data);
+
+// ================= SIDEBAR USERS =================
+
+export const getSidebarUsers = () =>
+  api.get("/message-api/sidebar-users");
+
+// ================= CHANNEL APIs =================
+
+export const getMyChannels = () =>
+  api.get("/channel-api/my-channels");
+
+export const createChannel = (data) =>
+  api.post("/channel-api/create", data);
+
+export const getChannelMessages = (id) =>
+  api.get(`/message-api/channel-messages/${id}`);
+
+// Export axios instance
+export default api;

@@ -1,59 +1,62 @@
 import { useState } from "react";
 import axios from "axios";
-import { useForm } from "react-hook-form";
 
 export default function AuthPage({ goChat, goBack }) {
 
   const [isSignup, setIsSignup] = useState(true);
 
-  const { register, handleSubmit, reset } = useForm();
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: ""
+  });
 
-  const signup = async (data) => {
+  const handleChange = (e) => {
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const signup = async () => {
     try {
 
       await axios.post(
         "http://localhost:4000/user-api/register",
-        data
+        form
       );
 
       alert("User Registered Successfully");
 
-      reset();
-
       setIsSignup(false);
 
     } catch (error) {
-      console.log(error.response?.data || error);
-      alert("Registration Failed");
+      console.log(error);
     }
   };
 
-  const login = async (data) => {
+  const login = async () => {
     try {
 
       await axios.post(
         "http://localhost:4000/user-api/login",
-        data,
+        form,
         { withCredentials: true }
       );
 
       alert("Login Successful");
 
-      reset();
-
       goChat();
 
     } catch (error) {
-      console.log(error.response?.data || error);
-      alert("Login Failed");
+      console.log(error);
     }
   };
 
   return (
-
     <div className="min-h-screen flex items-center justify-center bg-[#0f235e]">
 
-      <div className="bg-slate-100 shadow-2xl rounded-xl p-10 w-[380px]">
+      <div className="bg-slate-100 shadow-2xl rounded-xl p-10 w-96">
 
         <button
           onClick={goBack}
@@ -66,37 +69,38 @@ export default function AuthPage({ goChat, goBack }) {
           {isSignup ? "Create Account" : "Welcome Back"}
         </h1>
 
-        <form onSubmit={handleSubmit(isSignup ? signup : login)}>
-
-          {isSignup && (
-            <input
-              {...register("name")}
-              placeholder="Full Name"
-              className="w-full border p-3 mb-3 rounded-lg"
-            />
-          )}
-
+        {isSignup && (
           <input
-            {...register("email")}
-            placeholder="Email Address"
+            type="text"
+            name="name"
+            placeholder="Full Name"
+            onChange={handleChange}
             className="w-full border p-3 mb-3 rounded-lg"
           />
+        )}
 
-          <input
-            {...register("password")}
-            type="password"
-            placeholder="Password"
-            className="w-full border p-3 mb-4 rounded-lg"
-          />
+        <input
+          type="email"
+          name="email"
+          placeholder="Email Address"
+          onChange={handleChange}
+          className="w-full border p-3 mb-3 rounded-lg"
+        />
 
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700"
-          >
-            {isSignup ? "Sign Up" : "Login"}
-          </button>
+        <input
+          type="password"
+          name="password"
+          placeholder="Password"
+          onChange={handleChange}
+          className="w-full border p-3 mb-4 rounded-lg"
+        />
 
-        </form>
+        <button
+          onClick={isSignup ? signup : login}
+          className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700"
+        >
+          {isSignup ? "Sign Up" : "Login"}
+        </button>
 
         <p className="text-center mt-5 text-sm text-gray-600">
 
@@ -117,6 +121,5 @@ export default function AuthPage({ goChat, goBack }) {
       </div>
 
     </div>
-
   );
 }

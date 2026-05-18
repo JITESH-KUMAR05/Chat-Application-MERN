@@ -1,24 +1,57 @@
-import { useState } from "react";
+import { createBrowserRouter, RouterProvider } from "react-router";
+import ChatWorkspace from "./pages/ChatWorkspace";
 import SplashScreen from "./components/SplashScreen";
-import AuthPage from "./pages/AuthPage";
-import ChatPage from "./pages/ChatPage";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import ChatArea from "./components/ChatArea";
+import ProfilePage from "./pages/ProfilePage";
+import ProtectedRoute from "./utils/protectedRoute"; 
+
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <SplashScreen />,
+  },
+  {
+    path: "/login",
+    element: <Login />,
+  },
+  {
+    path: "/signup",
+    element: <Signup />,
+  },
+  {
+    path: "/chat",
+    element: <ChatWorkspace />,
+    children: [
+      {
+        index: true,
+        element: (
+          <div className="flex-1 bg-white flex items-center justify-center">
+            <p className="text-gray-500 text-lg">
+              Select a chat to start messaging
+            </p>
+          </div>
+        ),
+      },
+      {
+        path: ":userId",
+        element: <ChatArea />,
+      },
+    ],
+  },
+  {
+  path: "/profile",
+  element: (
+    <ProtectedRoute>
+      <ProfilePage />
+    </ProtectedRoute>
+  ),
+},
+]);
 
 function App() {
-
-  const [page,setPage] = useState("splash");
-
-  if(page === "splash"){
-    return <SplashScreen goAuth={()=>setPage("auth")} />;
-  }
-
-  if(page === "auth"){
-    return <AuthPage goChat={()=>setPage("chat")} goBack={()=>setPage("splash")} />;
-  }
-
-  if(page === "chat"){
-    return <ChatPage logout={()=>setPage("auth")} />;
-  }
-
+  return <RouterProvider router={router} />;
 }
 
 export default App;

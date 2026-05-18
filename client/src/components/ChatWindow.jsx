@@ -1,13 +1,37 @@
+import { useMessageStore } from "../store/useMessageStore";
+import { useAuthStore } from "../store/useAuthStore";
 import MessageBubble from "./MessageBubble";
+import MessageInput from "./MessageInput";
 
-export default function ChatWindow({ messages }) {
+export default function ChatWindow({
+  selectedUserId,
+  fetchMessages,
+}) {
+  // Messages from Zustand store
+  const messages = useMessageStore((state) => state.messages);
+
+  // Logged in user
+  const user = useAuthStore((state) => state.user);
+
   return (
-    <div className="flex-1 bg-[#f9fafb] p-4 overflow-y-auto">
+    <div className="flex flex-col h-full bg-slate-900">
+      
+      {/* Messages Section */}
+      <div className="flex-1 p-4 overflow-y-scroll">
+        {messages.map((msg) => (
+          <MessageBubble
+            key={msg._id}
+            message={msg}
+          />
+        ))}
+      </div>
 
-      {messages.map((msg) => (
-        <MessageBubble key={msg._id} message={msg} />
-      ))}
-
+      {/* Message Input Section */}
+      <MessageInput
+        senderId={user?._id}
+        receiverId={selectedUserId}
+        refreshMessages={fetchMessages}
+      />
     </div>
   );
 }
