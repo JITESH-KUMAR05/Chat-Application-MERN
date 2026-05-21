@@ -5,14 +5,11 @@ import { Trash2 } from "lucide-react";
 
 export default function ReactionPopup({ reactions, onClose, messageId }) {
   const [selectedEmoji, setSelectedEmoji] = useState("ALL");
-  const currentUser = useAuthStore(state => state.user);
+  const currentUser = useAuthStore((state) => state.user);
   const currentUserId = currentUser._id;
 
+  const uniqueEmojis = ["ALL", ...new Set(reactions.map((r) => r.emoji))];
 
-  // Get unique emojis
-  const uniqueEmojis = ["ALL", ...new Set(reactions.map(r => r.emoji))];
-
-  // Filter reactions
   const filteredReactions =
     selectedEmoji === "ALL"
       ? reactions
@@ -22,7 +19,7 @@ export default function ReactionPopup({ reactions, onClose, messageId }) {
     try {
       await reactToMessage(messageId, {
         userId: currentUserId,
-        emoji: reaction.emoji
+        emoji: reaction.emoji,
       });
     } catch (err) {
       console.error("Remove reaction failed", err);
@@ -31,14 +28,14 @@ export default function ReactionPopup({ reactions, onClose, messageId }) {
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      
       {/* MODAL */}
       <div className="bg-white w-[350px] rounded-xl shadow-xl p-4">
-
         {/* HEADER */}
         <div className="flex justify-between items-center mb-3">
           <h2 className="font-semibold text-lg">Reactions</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-black">✖</button>
+          <button onClick={onClose} className="text-gray-500 hover:text-black">
+            ✖
+          </button>
         </div>
 
         {/* FILTER TABS */}
@@ -65,18 +62,22 @@ export default function ReactionPopup({ reactions, onClose, messageId }) {
             const id = r.userId?._id;
 
             return (
-              <div key={i} className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded">
-                
+              <div
+                key={i}
+                className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded"
+              >
                 {/* EMOJI */}
                 <span className="text-lg">{r.emoji}</span>
 
                 {/* USER NAME */}
                 <div className="flex items-center justify-between w-full">
-  
                   <span className="text-sm font-medium">
                     {currentUserId === id
                       ? "You"
-                      : user?.username || user?.firstName || user?.lastName || "Unknown User"}
+                      : user?.username ||
+                        user?.firstName ||
+                        user?.lastName ||
+                        "Unknown User"}
                   </span>
 
                   {/*  ONLY FOR YOU */}
@@ -85,15 +86,17 @@ export default function ReactionPopup({ reactions, onClose, messageId }) {
                       onClick={() => handleRemoveReaction(r)}
                       className="text-red-500 hover:text-red-700"
                     >
-                      <Trash2 size={18} className="text-red-500 hover:text-red-700" />
+                      <Trash2
+                        size={18}
+                        className="text-red-500 hover:text-red-700"
+                      />
                     </button>
                   )}
-              </div>
+                </div>
               </div>
             );
           })}
         </div>
-
       </div>
     </div>
   );

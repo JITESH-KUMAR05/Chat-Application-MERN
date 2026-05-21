@@ -6,14 +6,15 @@ export default function CreateChannelModal({ isOpen, onClose }) {
   const [name, setName] = useState("");
   const [availableUsers, setAvailableUsers] = useState([]);
   const [selectedMembers, setSelectedMembers] = useState([]);
-  const loadChannels = useMessageStore(state => state.loadChannels);
+  const loadChannels = useMessageStore((state) => state.loadChannels);
 
   useEffect(() => {
     if (isOpen) {
-      // Fetch all users so the admin can add them to the channel
-      getAllUsers().then(res => {
-        setAvailableUsers(res.data.payload || res.data);
-      }).catch(err => console.log(err));
+      getAllUsers()
+        .then((res) => {
+          setAvailableUsers(res.data.payload || res.data);
+        })
+        .catch((err) => console.log(err));
     }
   }, [isOpen]);
 
@@ -21,7 +22,7 @@ export default function CreateChannelModal({ isOpen, onClose }) {
 
   const toggleUser = (userId) => {
     if (selectedMembers.includes(userId)) {
-      setSelectedMembers(selectedMembers.filter(id => id !== userId));
+      setSelectedMembers(selectedMembers.filter((id) => id !== userId));
     } else {
       setSelectedMembers([...selectedMembers, userId]);
     }
@@ -33,11 +34,11 @@ export default function CreateChannelModal({ isOpen, onClose }) {
     try {
       await createChannel({
         name,
-        members: selectedMembers
+        members: selectedMembers,
       });
-      // Refresh channels in sidebar
+
       loadChannels();
-      // Reset and close
+
       setName("");
       setSelectedMembers([]);
       onClose();
@@ -50,8 +51,8 @@ export default function CreateChannelModal({ isOpen, onClose }) {
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-96 max-w-[90%] text-gray-800">
         <h2 className="text-xl font-bold mb-4">Create New Channel</h2>
-        
-        <input 
+
+        <input
           type="text"
           placeholder="Channel Name (e.g. Updates)"
           className="w-full border p-2 rounded mb-4 focus:outline-none focus:border-blue-500"
@@ -59,18 +60,23 @@ export default function CreateChannelModal({ isOpen, onClose }) {
           onChange={(e) => setName(e.target.value)}
         />
 
-        <p className="font-semibold mb-2 text-sm text-gray-600">Select Members:</p>
+        <p className="font-semibold mb-2 text-sm text-gray-600">
+          Select Members:
+        </p>
         <div className="max-h-48 overflow-y-auto mb-4 border rounded p-2 custom-scrollbar">
-          {availableUsers.map(user => (
+          {availableUsers.map((user) => (
             <div key={user._id} className="flex items-center gap-2 mb-2">
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 id={`user-${user._id}`}
                 checked={selectedMembers.includes(user._id)}
                 onChange={() => toggleUser(user._id)}
                 className="cursor-pointer"
               />
-              <label htmlFor={`user-${user._id}`} className="cursor-pointer text-sm">
+              <label
+                htmlFor={`user-${user._id}`}
+                className="cursor-pointer text-sm"
+              >
                 {user.firstName} {user.lastName || ""} ({user.email})
               </label>
             </div>
@@ -78,13 +84,13 @@ export default function CreateChannelModal({ isOpen, onClose }) {
         </div>
 
         <div className="flex justify-end gap-2">
-          <button 
+          <button
             onClick={onClose}
             className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
           >
             Cancel
           </button>
-          <button 
+          <button
             onClick={handleCreate}
             disabled={!name.trim()}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"

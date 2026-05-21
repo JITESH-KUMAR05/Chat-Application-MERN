@@ -7,19 +7,44 @@ const SOCKET_URL = (
 ).replace(/\/$/, "");
 
 const socket = io(SOCKET_URL, {
-  withCredentials: true
-});
-// Add this right below your socket initialization
-socket.on("connect", () => {
-  console.log("🟢 FRONTEND: Successfully connected to Socket server! My ID:", socket.id);
+  withCredentials: true,
 });
 
-socket.on("connect_error", (err) => {
-  console.error("🔴 FRONTEND: Socket Connection Error:", err.message);
-});
+/* ======================================================
+   SOCKET HELPERS
+====================================================== */
 
-socket.on("disconnect", (reason) => {
-  console.warn("🟡 FRONTEND: Socket Disconnected:", reason);
-});
+export const setupSocketListeners = (useMessageStore) => {
+  const {
+    receiveMessage,
+    updateMessageReaction,
+    updateMessage,
+    addThreadReply,
+  } = useMessageStore.getState();
+
+  /* NEW MESSAGE */
+
+  socket.on("message Received", (message) => {
+    receiveMessage(message);
+  });
+
+  /* REACTION UPDATE */
+
+  socket.on("reactionUpdated", (updatedMessage) => {
+    updateMessageReaction(updatedMessage);
+  });
+
+  /* MESSAGE EDITED */
+
+  socket.on("message edited", (updatedMessage) => {
+    updateMessage(updatedMessage);
+  });
+
+  /* THREAD REPLY */
+
+  socket.on("thread reply", (replyMessage) => {
+    addThreadReply(replyMessage);
+  });
+};
 
 export default socket;

@@ -1,35 +1,29 @@
 import { useState } from "react";
-import axios from "axios";
+import api from "../services/api";
 
 export default function AuthPage({ goChat, goBack }) {
-
   const [isSignup, setIsSignup] = useState(true);
 
   const [form, setForm] = useState({
     name: "",
     email: "",
-    password: ""
+    password: "",
   });
 
   const handleChange = (e) => {
     setForm({
       ...form,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const signup = async () => {
     try {
-
-      await axios.post(
-        "http://localhost:4000/user-api/register",
-        form
-      );
+      await api.post("/user-api/register", form);
 
       alert("User Registered Successfully");
 
       setIsSignup(false);
-
     } catch (error) {
       console.log(error);
     }
@@ -37,17 +31,11 @@ export default function AuthPage({ goChat, goBack }) {
 
   const login = async () => {
     try {
-
-      await axios.post(
-        "http://localhost:4000/user-api/login",
-        form,
-        { withCredentials: true }
-      );
+      await api.post("/user-api/login", form);
 
       alert("Login Successful");
 
       goChat();
-
     } catch (error) {
       console.log(error);
     }
@@ -55,13 +43,8 @@ export default function AuthPage({ goChat, goBack }) {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#0f235e]">
-
       <div className="bg-slate-100 shadow-2xl rounded-xl p-10 w-96">
-
-        <button
-          onClick={goBack}
-          className="text-blue-600 text-sm mb-4"
-        >
+        <button onClick={goBack} className="text-blue-600 text-sm mb-4">
           ← Back
         </button>
 
@@ -103,11 +86,7 @@ export default function AuthPage({ goChat, goBack }) {
         </button>
 
         <p className="text-center mt-5 text-sm text-gray-600">
-
-          {isSignup
-            ? "Already have an account?"
-            : "New here?"
-          }
+          {isSignup ? "Already have an account?" : "New here?"}
 
           <button
             onClick={() => setIsSignup(!isSignup)}
@@ -115,11 +94,8 @@ export default function AuthPage({ goChat, goBack }) {
           >
             {isSignup ? "Login" : "Signup"}
           </button>
-
         </p>
-
       </div>
-
     </div>
   );
 }

@@ -1,9 +1,5 @@
-import ChatLayout from "../layout/ChatLayout"
+import ChatLayout from "../layout/ChatLayout";
 
-import { useEffect } from "react";
-
-export default function ChatWorkspace(){
-    
-return <ChatLayout/>
-
+export default function ChatWorkspace() {
+  return <ChatLayout />;
 }

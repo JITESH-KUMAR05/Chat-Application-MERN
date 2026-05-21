@@ -14,17 +14,15 @@ export default function ProfilePage() {
     connections: 0,
     channels: 0,
     messages: 0,
-    memberSince: ""
+    memberSince: "",
   });
 
-  // 🔥 NEW STATES
   const [notes, setNotes] = useState([]);
   const [newNote, setNewNote] = useState("");
 
   const [imageUrl, setImageUrl] = useState("");
   const [showInput, setShowInput] = useState(false);
 
-  // ✅ LOAD DATA
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -41,13 +39,12 @@ export default function ProfilePage() {
     loadData();
   }, []);
 
-  // ✅ ADD NOTE
   const addNote = async () => {
     if (!newNote.trim()) return;
 
     try {
       const res = await api.post("/user-api/add-note", {
-        text: newNote
+        text: newNote,
       });
 
       setNotes(res.data.payload);
@@ -57,7 +54,6 @@ export default function ProfilePage() {
     }
   };
 
-  // ✅ DELETE NOTE
   const deleteNote = async (index) => {
     try {
       const res = await api.delete(`/user-api/delete-note/${index}`);
@@ -67,13 +63,12 @@ export default function ProfilePage() {
     }
   };
 
-  // ✅ UPDATE PROFILE IMAGE
   const updateImage = async () => {
     if (!imageUrl) return;
 
     try {
       const res = await api.post("/user-api/update-profile-pic", {
-        profilePic: imageUrl
+        profilePic: imageUrl,
       });
 
       setUser(res.data.payload);
@@ -86,10 +81,8 @@ export default function ProfilePage() {
 
   return (
     <div className="flex h-full bg-[#020617] text-white">
-
       {/* LEFT SIDEBAR */}
       <div className="w-[260px] bg-slate-900 flex flex-col items-center p-6 border-r border-blue-900">
-
         {/* PROFILE IMAGE */}
         <div className="relative">
           <img
@@ -123,20 +116,15 @@ export default function ProfilePage() {
           </div>
         )}
 
-        <h2 className="text-lg font-semibold mt-4">
-          {user?.firstName}
-        </h2>
+        <h2 className="text-lg font-semibold mt-4">{user?.firstName}</h2>
 
         <p className="text-sm text-gray-400">{user?.email}</p>
 
-        <p className="mt-4 text-blue-400">
-          Connections: {stats.connections}
-        </p>
+        <p className="mt-4 text-blue-400">Connections: {stats.connections}</p>
       </div>
 
       {/* MAIN CONTENT */}
       <div className="flex-1 p-8 relative">
-
         {/* BACK BUTTON */}
         <button
           onClick={() => navigate(-1)}
@@ -151,7 +139,6 @@ export default function ProfilePage() {
 
         {/* STATS */}
         <div className="flex justify-center gap-10 mb-10">
-
           <div className="text-center">
             <div className="w-24 h-24 rounded-full border-4 border-blue-500 flex items-center justify-center text-xl">
               {stats.channels}
@@ -165,7 +152,6 @@ export default function ProfilePage() {
             </div>
             <p className="mt-2 text-gray-400">Messages</p>
           </div>
-
         </div>
 
         {/* MEMBER SINCE */}
@@ -201,7 +187,6 @@ export default function ProfilePage() {
 
           {/* NOTES LIST */}
           <div className="flex flex-col gap-3 max-h-[300px] overflow-y-auto">
-
             {notes.length === 0 ? (
               <p className="text-gray-400 text-sm">No notes yet</p>
             ) : (
@@ -229,10 +214,8 @@ export default function ProfilePage() {
                 </div>
               ))
             )}
-
           </div>
         </div>
-
       </div>
     </div>
   );

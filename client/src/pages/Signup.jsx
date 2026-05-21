@@ -103,7 +103,9 @@ export default function Signup() {
                 validate: async (value) => {
                   if (!value) return true;
                   try {
-                    const res = await api.get(`/user-api/check-username?username=${value}`);
+                    const res = await api.get(
+                      `/user-api/check-username?username=${value}`,
+                    );
                     return res.data.available || res.data.message;
                   } catch (e) {
                     return "Error checking username";

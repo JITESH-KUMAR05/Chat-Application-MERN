@@ -1,144 +1,195 @@
-import dotenv from 'dotenv';
-import express from 'express';
+import dotenv from "dotenv";
+import express from "express";
 import http from "http";
-import cookieParser from 'cookie-parser';
-import { connect } from 'mongoose';
+import cookieParser from "cookie-parser";
+import { connect } from "mongoose";
 import { Server } from "socket.io";
 import cors from "cors";
-import jwt from "jsonwebtoken";
+import path from "path";
 
-// Route & Model Imports
-import messageRoute from './APIs/MessageAPI.js';
+// Route Imports
+import messageRoute from "./APIs/MessageAPI.js";
 import { userRouter } from "./APIs/UserAPI.js";
 import { channelRoute } from "./APIs/ChannelAPI.js";
-import { MessageModel } from './Models/MessageModel.js';
-import { ChannelModel } from './Models/ChannelModel.js';
+import { analyticsRoute } from "./APIs/AnalyticsAPI.js";
+import dashboardRoute from "./APIs/dashboardAPI.js";
+import { messageFeaturesRoute } from "./APIs/MessageFeaturesAPI.js";
+import { callRoute } from "./APIs/CallAPI.js";
+
+// Models & Sockets
+import { MessageModel } from "./Models/MessageModel.js";
+import { ChannelModel } from "./Models/ChannelModel.js";
+import { UserModel } from "./Models/UserModel.js";
+import { registerCallSockets } from "./socket/callSocket.js";
 
 dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
 
-const defaultAllowedOrigins = ["http://localhost:5173", "http://127.0.0.1:5501"];
+// ============================
+// CORS CONFIGURATION
+// ============================
+const defaultAllowedOrigins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5501"
+];
+
 const envAllowedOrigins = (process.env.CLIENT_URL ?? "")
     .split(",")
-    .map((origin) => origin.trim().replace(/\/$/, ""))
+    .map(origin => origin.trim().replace(/\/$/, ""))
     .filter(Boolean);
 
 const allowedOrigins = [...new Set([...defaultAllowedOrigins, ...envAllowedOrigins])];
+
 const corsOptions = {
     origin: allowedOrigins,
-    credentials: true,
+    credentials: true
 };
 
-// 1. Socket.io Setup
-const io = new Server(server, {
-    cors: corsOptions
-});
-
-io.on("connection", (socket) => {
-    console.log("A user connected via socket", socket.id);
-
-    socket.on("setup", async (userData) => { // Make async
-        if (userData._id) {
-            socket.join(userData._id);
-            console.log(`User ${userData._id} joined personal room`);
-            
-            // Automatically find all channels this user belongs to and join those rooms!
-            try {
-                const userChannels = await ChannelModel.find({ members: userData._id });
-                userChannels.forEach(channel => {
-                    socket.join(channel._id.toString());
-                    console.log(`User joined channel: ${channel._id}`);
-                });
-            } catch (err) {
-                console.log("Error joining channel rooms", err);
-            }
-        }
-
-        if (userData.channels && Array.isArray(userData.channels)) {
-            userData.channels.forEach(channelId => {
-                socket.join(channelId);
-                console.log(`User joined channel: ${channelId}`);
-            });
-        }
-        socket.emit("connected");
-    });
-
-  socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.userId);
-  });
-});
-
-// 2. Middleware
-app.use(cors(corsOptions));
-app.use(express.json());
-app.use(cookieParser())
+// ============================
+// SOCKET.IO SETUP
+// ============================
+const io = new Server(server, { cors: corsOptions });
 app.set("socketio", io);
 
-// 3. Routes
-app.use("/user-api", userRouter);
-app.use('/message-api', messageRoute);
-app.use('/channel-api', channelRoute);
+// Helper function for live dashboard updates
+const broadcastDashboardUpdate = async () => {
+    try {
+        const totalMessages = await MessageModel.countDocuments();
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayMessages = await MessageModel.countDocuments({
+            createdAt: { $gte: today }
+        });
+        
+        const activeUsers = await UserModel.countDocuments();
+        
+        io.emit("dashboardUpdate", { totalMessages, todayMessages, activeUsers });
+    } catch (err) {
+        console.error("Dashboard Broadcast Error:", err);
+    }
+};
 
-// 5. Invalid Route Handler (AFTER routes)
-app.use((req, res) => {
-    res.status(404).json({
-        message: `${req.path} Invalid Path`
+io.on("connection", (socket) => {
+    console.log("User connected:", socket.id);
+
+    // Register WebRTC Call Sockets
+    registerCallSockets(io, socket);
+
+    socket.on("setup", async (userData) => {
+        try {
+            if (!userData?._id) return;
+
+            socket.join(userData._id);
+            console.log(`User ${userData._id} joined personal room`);
+
+            const userChannels = await ChannelModel.find({ members: userData._id });
+            userChannels.forEach((channel) => {
+                socket.join(channel._id.toString());
+            });
+
+            await UserModel.findByIdAndUpdate(userData._id, { lastSeen: new Date() });
+            socket.emit("connected");
+        } catch (err) {
+            console.error("Setup Error:", err);
+        }
+    });
+
+    socket.on("join channel", (channelId) => {
+        socket.join(channelId);
+        console.log("Joined channel:", channelId);
+    });
+
+    socket.on("disconnect", () => {
+        console.log("User disconnected:", socket.id);
     });
 });
 
-// 4. Database & Change Stream Logic
+// ============================
+// MIDDLEWARE
+// ============================
+app.use(cors(corsOptions));
+app.use(express.json());
+app.use(cookieParser());
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+
+// ============================
+// ROUTES
+// ============================
+app.use("/user-api", userRouter);
+app.use("/message-api", messageRoute);
+app.use("/channel-api", channelRoute);
+app.use("/analytics", analyticsRoute);
+app.use("/dashboard-api", dashboardRoute);
+app.use("/message-feature-api", messageFeaturesRoute);
+app.use("/call-api", callRoute);
+
+// 404 Handler
+app.use((req, res) => {
+    res.status(404).json({ message: `${req.path} Invalid Path` });
+});
+
+// ============================
+// DATABASE & SERVER START
+// ============================
 const connectDB = async () => {
     try {
         await connect(process.env.MONGO_URI);
-        console.log("DB Connection Successful");
+        console.log("DB Connected");
 
-        
+        // MongoDB Change Stream for Real-time Messaging & Dashboard
         const messageChangeStream = MessageModel.watch();
 
-        messageChangeStream.on("change", (change) => {
-            
-            // 1. ONLY proceed if a brand new message was inserted
-            if (change.operationType === "insert") {
+        messageChangeStream.on("change", async (change) => {
+            try {
+                if (change.operationType !== "insert") return;
+
                 const messageDetails = change.fullDocument;
                 const populatedMessage = await MessageModel.findById(messageDetails._id)
-                    .populate("sender", "firstName lastName email profilePic");
+                    .populate("sender", "firstName lastName email profilePic")
+                    .populate("parentMessage");
 
-                
-                if (!messageDetails.sender) {
-                    console.log("Skipping socket emit: Message has no sender ID", messageDetails);
-                    return; 
-                }
+                if (!messageDetails.sender) return;
 
+                // Route message to Channel or Direct Message
                 if (messageDetails.channel) {
                     io.to(messageDetails.channel.toString()).emit("message Received", populatedMessage);
                 } else if (messageDetails.receiver) {
                     io.to(messageDetails.receiver.toString())
-                      .to(messageDetails.sender.toString()) // It will never reach here if sender is undefined
+                      .to(messageDetails.sender.toString())
                       .emit("message Received", populatedMessage);
                 }
+
+                // Automatically update dashboard stats for all connected admins/users
+                broadcastDashboardUpdate();
+
+            } catch (err) {
+                console.error("Change stream error", err);
             }
         });
 
-        // 5. Start Server
         const PORT = process.env.PORT || 8080;
-        server.listen(PORT, () => console.log("Server Started on Port:- ", PORT));
+        server.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
+        });
+
     } catch (err) {
-        console.log("Error in DB Connection", err);
+        console.error("DB Connection Error", err);
     }
 };
 
 connectDB();
 
-
-
-// 6. Global Error Handler (MUST BE LAST)
+// ============================
+// GLOBAL ERROR HANDLER
+// ============================
 app.use((err, req, res, next) => {
-    console.error("Error details:", err);
+    console.error(err);
 
     if (err.name === "ValidationError" || err.name === "CastError") {
-        return res.status(400).json({ message: "error occurred", error: err.message });
+        return res.status(400).json({ message: "Error occurred", error: err.message });
     }
 
     const errCode = err.code ?? err.cause?.code ?? err.errorResponse?.code;
@@ -146,14 +197,11 @@ app.use((err, req, res, next) => {
 
     if (errCode === 11000) {
         const field = Object.keys(keyValue)[0];
-        return res.status(409).json({
-            message: "error occurred",
-            error: `${field} already exists`,
-        });
+        return res.status(409).json({ message: "Conflict", error: `${field} already exists` });
     }
 
-    res.status(err.status || 500).json({
-        message: "error occurred",
-        error: err.message || "Server side error",
+    res.status(err.status || 500).json({ 
+        message: "Server Error", 
+        error: err.message || "Internal Server Error" 
     });
 });

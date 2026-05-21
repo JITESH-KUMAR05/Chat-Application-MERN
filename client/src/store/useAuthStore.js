@@ -12,8 +12,10 @@ export const useAuthStore = create(
 
       login: async (userCredObj) => {
         try {
-          // set loading to true
-          set({ loading: true, error: null });
+          set({
+            loading: true,
+            error: null,
+          });
 
           let res = await api.post("/user-api/login", userCredObj);
 
@@ -23,28 +25,73 @@ export const useAuthStore = create(
             isAuthenticated: true,
             user: res.data.payload,
           });
+
           return true;
         } catch (err) {
           console.log(err);
+
           set({
             loading: false,
             error: err.response?.data?.message || err.message || "Login failed",
             isAuthenticated: false,
             user: null,
           });
+
+          return false;
+        }
+      },
+
+      googleLogin: async (googleUserObj) => {
+        try {
+          set({
+            loading: true,
+            error: null,
+          });
+
+          let res = await api.post("/user-api/google-login", googleUserObj);
+
+          set({
+            loading: false,
+            error: null,
+            isAuthenticated: true,
+            user: res.data.payload,
+          });
+
+          return true;
+        } catch (err) {
+          console.log(err);
+
+          set({
+            loading: false,
+            error:
+              err.response?.data?.message ||
+              err.message ||
+              "Google Login failed",
+            isAuthenticated: false,
+            user: null,
+          });
+
           return false;
         }
       },
 
       logout: async () => {
         try {
-          set({ loading: true, error: null });
-          // make api call
+          set({
+            loading: true,
+            error: null,
+          });
+
           await api.get("/user-api/logout");
-          // update the state
-          set({ user: null, loading: false, isAuthenticated: false });
+
+          set({
+            user: null,
+            loading: false,
+            isAuthenticated: false,
+          });
         } catch (err) {
           console.log(err);
+
           set({
             loading: false,
             error:
@@ -56,12 +103,12 @@ export const useAuthStore = create(
       },
 
       setUser: (user) =>
-  set(() => ({
-    user,
-    isAuthenticated: !!user,
-    loading: false,
-    error: null,
-  })),
+        set(() => ({
+          user,
+          isAuthenticated: !!user,
+          loading: false,
+          error: null,
+        })),
     }),
     {
       name: "auth-storage",

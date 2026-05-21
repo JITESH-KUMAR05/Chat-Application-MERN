@@ -9,6 +9,9 @@ import logo from "../assets/logo.png";
 
 import { Eye, EyeOff } from "lucide-react";
 
+import { signInWithPopup } from "firebase/auth";
+import { auth, provider } from "../firebase";
+
 export default function Login() {
   const {
     register,
@@ -16,24 +19,58 @@ export default function Login() {
     formState: { errors },
   } = useForm();
 
-  const login = useAuthStore(state => state.login);
-  const loading = useAuthStore(state => state.loading);
-  const error = useAuthStore(state => state.error);
+  const login = useAuthStore((state) => state.login);
+
+  const loading = useAuthStore((state) => state.loading);
+
+  const error = useAuthStore((state) => state.error);
+
   const navigate = useNavigate();
 
   const [showPassword, setShowPassword] = useState(false);
 
   const onSubmit = async (data) => {
     const success = await login(data);
+
     if (success) {
       navigate("/chat");
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+
+      const user = result.user;
+
+      const success = await useAuthStore.getState().googleLogin({
+        firstName: user.displayName?.split(" ")[0] || "",
+
+        lastName: user.displayName?.split(" ")[1] || "",
+
+        email: user.email,
+
+        profilePic: user.photoURL,
+
+        googleId: user.uid,
+      });
+
+      if (success) {
+        navigate("/chat");
+      }
+    } catch (error) {
+      console.log("Google Login Error:", error);
+
+      alert("Google Login Failed");
     }
   };
 
   return (
     <div
       className="h-screen bg-cover bg-center flex flex-col"
-      style={{ backgroundImage: `url(${bg})` }}
+      style={{
+        backgroundImage: `url(${bg})`,
+      }}
     >
       {/* NAVBAR */}
 
@@ -41,6 +78,7 @@ export default function Login() {
         <img
           src={logo}
           className="w-12 h-12 rounded-full border border-white"
+          alt="logo"
         />
       </div>
 
@@ -121,14 +159,20 @@ hover:bg-[#020617] hover:text-white hover:border-2 hover:border-blue-500 hover:s
 
           <div className="flex items-center gap-3 mb-4">
             <hr className="flex-1 border-white/50" />
+
             <p className="text-white text-sm">OR</p>
+
             <hr className="flex-1 border-white/50" />
           </div>
 
           {/* GOOGLE LOGIN */}
+
           <button
             type="button"
-            className="w-full bg-white text-black py-2 rounded-lg hover:shadow-[0_0_10px_white] transition cursor-pointer"
+            onClick={handleGoogleLogin}
+            className="w-full bg-white text-black py-3 rounded-lg font-semibold 
+transition-all duration-300 cursor-pointer
+hover:bg-red-500 hover:text-white hover:shadow-[0_0_15px_#ef4444]"
           >
             Continue with Google
           </button>

@@ -1,30 +1,26 @@
 import { useState, useEffect } from "react";
-import socket from "../services/socket"; 
+import socket from "../services/socket";
 import Sidebar from "../components/Sidebar.jsx";
 import ChatWindow from "../components/ChatWindow";
 import MessageInput from "../components/MessageInput";
-// Cleaned up unused import
-import { getAllUsers, getMessages } from "../services/api.js"; 
+
+import { getAllUsers, getMessages } from "../services/api.js";
 
 export default function ChatPage({ logout, currentUser }) {
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [messages, setMessages] = useState([]);
 
-  // 1. Initialize Socket Connection on Load
   useEffect(() => {
-    // Tell the backend who we are so we join our private room
     if (currentUser) {
       socket.emit("setup", currentUser); // Use the imported socket
     }
-  }, [currentUser]); 
-  
+  }, [currentUser]);
 
-  // 2. Fetch Users for the Sidebar
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await getAllUsers(); 
+        const response = await getAllUsers();
         setUsers(response.data);
       } catch (error) {
         console.error("Error fetching users", error);
@@ -33,7 +29,6 @@ export default function ChatPage({ logout, currentUser }) {
     fetchUsers();
   }, []);
 
-  // 3. Fetch Chat History when a Sidebar User is Clicked
   useEffect(() => {
     const fetchMessages = async () => {
       if (!selectedUser) return;
@@ -47,36 +42,35 @@ export default function ChatPage({ logout, currentUser }) {
     fetchMessages();
   }, [selectedUser]);
 
-  // 4. Listen for Live Socket Updates (WITH DEDUPLICATION FIX)
   useEffect(() => {
     if (!socket) return;
 
     socket.on("message Received", (newMessage) => {
       if (
-        selectedUser && 
-        (newMessage.sender === selectedUser._id || newMessage.receiver === selectedUser._id)
+        selectedUser &&
+        (newMessage.sender === selectedUser._id ||
+          newMessage.receiver === selectedUser._id)
       ) {
         setMessages((prevMessages) => {
-          // Check if the message already exists in state to prevent duplicates
-          const isDuplicate = prevMessages.some((msg) => msg._id === newMessage._id);
-          
+          const isDuplicate = prevMessages.some(
+            (msg) => msg._id === newMessage._id,
+          );
+
           if (isDuplicate) {
             return prevMessages; // Do nothing if we already have it
           }
-          
+
           return [...prevMessages, newMessage]; // Otherwise, add it
         });
       }
     });
 
-    // Cleanup listener to prevent duplicate events
     return () => socket.off("message Received");
   }, [socket, selectedUser]);
 
-  // 5. Handle sending a message locally so the UI feels instant
   const handleMessageSent = (newMessage) => {
-     setMessages((prevMessages) => [...prevMessages, newMessage]);
-  }
+    setMessages((prevMessages) => [...prevMessages, newMessage]);
+  };
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -90,14 +84,14 @@ export default function ChatPage({ logout, currentUser }) {
             <div className="bg-white p-4 border-b shadow-sm font-bold text-lg">
               Chatting with {selectedUser.name || "User"}
             </div>
-            
+
             {/* Chat Window gets the messages array */}
             <ChatWindow messages={messages} />
-            
+
             {/* Input gets the receiver ID and a callback to update UI */}
-            <MessageInput 
-               receiver={selectedUser._id} 
-               onMessageSent={handleMessageSent} 
+            <MessageInput
+              receiver={selectedUser._id}
+              onMessageSent={handleMessageSent}
             />
           </>
         ) : (
