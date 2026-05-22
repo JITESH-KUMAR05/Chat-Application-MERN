@@ -14,6 +14,8 @@ import {
   getPeerConnection,
   closePeerConnection,
   createPeerConnection,
+  addIceCandidateToPeer, 
+  flushIceCandidates,
 } from "../services/webrtc";
 
 export default function ChatLayout() {
@@ -50,13 +52,13 @@ export default function ChatLayout() {
       if (!peer) return;
       await peer.setRemoteDescription(new RTCSessionDescription(answer));
       setCallAccepted(true);
+      
+      flushIceCandidates(); 
     });
 
     socket.on("ice-candidate", async ({ candidate }) => {
-      const peer = getPeerConnection();
-      if (peer && candidate) {
-        await peer.addIceCandidate(new RTCIceCandidate(candidate));
-      }
+      
+      await addIceCandidateToPeer(candidate); 
     });
 
     socket.on("call-ended", () => cleanupCall());
@@ -91,6 +93,8 @@ export default function ChatLayout() {
       await peer.setRemoteDescription(
         new RTCSessionDescription(incomingCall.offer),
       );
+      flushIceCandidates(); 
+
       const answer = await peer.createAnswer();
       await peer.setLocalDescription(answer);
 
