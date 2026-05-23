@@ -5,6 +5,10 @@ import { getSidebarUsers, getMyChannels } from "../services/api";
 export const useMessageStore = create((set, get) => ({
   messages: [],
 
+  replyingTo: null, 
+  
+  setReplyingTo: (message) => set({ replyingTo: message }),
+
   selectedUser: null,
 
   unreadCounts: {},
