@@ -7,7 +7,7 @@ import Signup from "./pages/Signup";
 import ChatArea from "./components/ChatArea";
 import ProfilePage from "./pages/ProfilePage";
 import ProtectedRoute from "./utils/protectedRoute";
-import DashboardPage from "./pages/DashboardPage";
+import Dashboard from "./pages/Dashboard";
 
 const router = createBrowserRouter([
   {
@@ -46,7 +46,7 @@ const router = createBrowserRouter([
       },
       {
         path: "dashboard",
-        element: <DashboardPage />
+        element: <Dashboard />
       }
     ]
   },
