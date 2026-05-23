@@ -15,8 +15,8 @@ export default function Dashboard() {
       
       setLoading(true);
       try {
-        // 🚨 Using your exact backend route
         const res = await api.get("/dashboard-api/analytics");
+        console.log("PRODUCTION BACKEND DATA:", res.data);
         setData(res.data);
       } catch (err) {
         console.error("Dashboard Load Error:", err);
