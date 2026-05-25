@@ -50,16 +50,20 @@ export const registerCallSockets = (io, socket) => {
   });
 
   socket.on("end-call", async ({ to, callId }) => {
-    try {
+  try {
+    console.log(`Attempting to end call: ${callId} for user: ${to}`);
+
+    if (callId) {
       await CallModel.findByIdAndUpdate(callId, {
         status: "ended",
-
         endedAt: new Date(),
       });
-
-      io.to(to).emit("call-ended");
-    } catch (err) {
-      console.log(err);
     }
-  });
+
+    io.to(to).emit("call-ended");
+    
+  } catch (err) {
+    console.error("Backend Error Ending Call:", err);
+  }
+});
 };

@@ -33,6 +33,7 @@ export default function ChatLayout() {
     setRemoteStream,
     resetCall,
     activeCallUser,
+    callId, // 🚨 Ensure your Zustand store has this state!
   } = useCallStore();
 
   useEffect(() => {
@@ -52,12 +53,10 @@ export default function ChatLayout() {
       if (!peer) return;
       await peer.setRemoteDescription(new RTCSessionDescription(answer));
       setCallAccepted(true);
-      
       flushIceCandidates(); 
     });
 
     socket.on("ice-candidate", async ({ candidate }) => {
-      
       await addIceCandidateToPeer(candidate); 
     });
 
@@ -101,7 +100,7 @@ export default function ChatLayout() {
       socket.emit("answer-call", { to: incomingCall.from._id, answer });
       setCallAccepted(true);
     } catch (err) {
-      console.log("Error accepting call:", err);
+      console.error("Error accepting call:", err);
     }
   };
 
@@ -124,17 +123,31 @@ export default function ChatLayout() {
       console.error("Error cleaning up tracks:", err);
     } finally {
       // Always reset UI state, even if hardware tracks fail to stop
-      setCallAccepted(false);
-      resetCall();
+      useCallStore.getState().setCallAccepted(false);
+      useCallStore.getState().resetCall();
     }
   };
 
+  // 🚨 UPDATED: Now safely extracts and sends the callId to your backend
   const endCall = () => {
-    if (activeCallUser?._id) {
-      socket.emit("end-call", { to: activeCallUser._id });
-    } else if (incomingCall?.from?._id) {
-      socket.emit("end-call", { to: incomingCall.from._id });
+    
+    // Grab the freshest state directly from Zustand to avoid closure traps
+    const currentCallState = useCallStore.getState();
+    
+    // Determine who we were talking to
+    const targetUserId = currentCallState.activeCallUser?._id || currentCallState.incomingCall?.from?._id;
+    
+    // Determine the database ID of the current call
+    const currentCallId = currentCallState.callId || currentCallState.incomingCall?.callId;
+
+    console.log("SENDING END-CALL TO BACKEND:", { to: targetUserId, callId: currentCallId });
+    if (targetUserId) {
+      socket.emit("end-call", { 
+        to: targetUserId, 
+        callId: currentCallId 
+      });
     }
+    
     cleanupCall();
   };
 

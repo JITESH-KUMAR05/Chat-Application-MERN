@@ -17,7 +17,7 @@ import MessageBubble from "./MessageBubble";
 import EmojiPicker from "emoji-picker-react";
 import socket from "../services/socket";
 import CallingModal from "./CallingModal";
-import { createPeerConnection } from "../services/webrtc";
+import { createPeerConnection, closePeerConnection } from "../services/webrtc";
 
 export default function ChatArea() {
   const { register, handleSubmit, watch, setValue, reset } = useForm();
@@ -186,6 +186,44 @@ export default function ChatArea() {
     } catch (err) {
       console.log("Error starting call:", err);
     }
+  };
+  const cleanupCall = () => {
+    try {
+      const currentLocalStream = useCallStore.getState().localStream;
+      const currentRemoteStream = useCallStore.getState().remoteStream;
+
+      if (currentLocalStream) {
+        currentLocalStream.getTracks().forEach((track) => track.stop());
+      }
+      if (currentRemoteStream) {
+        currentRemoteStream.getTracks().forEach((track) => track.stop());
+      }
+
+      closePeerConnection();
+    } catch (err) {
+      console.error("Error cleaning up tracks:", err);
+    } finally {
+      useCallStore.getState().setCallAccepted(false);
+      useCallStore.getState().resetCall();
+    }
+  };
+
+  const endCall = () => {
+    
+    const currentCallState = useCallStore.getState();
+    
+    const targetUserId = currentCallState.activeCallUser?._id || currentCallState.incomingCall?.from?._id;
+    
+    const currentCallId = currentCallState.callId || currentCallState.incomingCall?.callId;
+
+    if (targetUserId) {
+      socket.emit("end-call", { 
+        to: targetUserId, 
+        callId: currentCallId 
+      });
+    }
+    
+    cleanupCall();
   };
 
   if (!selectedUser) {
@@ -367,7 +405,7 @@ export default function ChatArea() {
         <CallingModal
           receiver={outgoingCall?.receiver}
           type={outgoingCall?.type}
-          onCancel={() => {}}
+          onCancel={endCall}
         />
       )}
     </div>

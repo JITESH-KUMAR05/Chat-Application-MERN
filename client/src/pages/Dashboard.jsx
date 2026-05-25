@@ -16,7 +16,6 @@ export default function Dashboard() {
       setLoading(true);
       try {
         const res = await api.get("/dashboard-api/analytics");
-        console.log("PRODUCTION BACKEND DATA:", res.data);
         setData(res.data);
       } catch (err) {
         console.error("Dashboard Load Error:", err);
