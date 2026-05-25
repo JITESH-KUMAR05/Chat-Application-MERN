@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useMessageStore } from "../store/useMessageStore";
 import {
   editMessageApi,
@@ -11,6 +11,9 @@ import {
 
 export function MessageActions({ isOwnMessage, onEdit, message, onReact }) {
   const [showMenu, setShowMenu] = useState(false);
+  
+  // 🚨 1. Create the reference (hitbox) for this specific menu
+  const menuRef = useRef(null); 
 
   const setReplyingToMessage = useMessageStore(
     (state) => state.setReplyingToMessage,
@@ -18,10 +21,34 @@ export function MessageActions({ isOwnMessage, onEdit, message, onReact }) {
 
   const emojis = ["👍", "❤️", "😂", "😮", "😢"];
 
+  // 🚨 2. The Click-Outside Listener
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // If the menu is open, AND the click happened outside our menuRef hitbox...
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowMenu(false); // Close it!
+      }
+    };
+
+    // Only attach the heavy event listener if the menu is actually open
+    if (showMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    // Cleanup function so we don't cause memory leaks
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showMenu]);
+
   return (
-    // 🚨 FIX 1: Elevate the z-index of the parent wrapper when open
-    <div className={`relative flex items-center ${showMenu ? "z-[9999]" : "z-10"}`}>
+    // 🚨 3. Attach the menuRef to the absolute outermost div of this component
+    <div 
+      ref={menuRef} 
+      className={`relative flex items-center ${showMenu ? "z-[9999]" : "z-10"}`}
+    >
       
+      {/* TRIGGER BUTTON */}
       <button
         onClick={() => setShowMenu(!showMenu)}
         className="bg-black text-white w-7 h-7 rounded-full flex items-center justify-center text-sm hover:bg-gray-800 transition-colors"
@@ -29,16 +56,15 @@ export function MessageActions({ isOwnMessage, onEdit, message, onReact }) {
         ➜
       </button>
 
+      {/* DROPDOWN MENU */}
       {showMenu && (
-        // 🚨 FIX 2: 'bottom-full mb-2' makes it open UPWARDS instead of downwards
-        // 'right-0' keeps it aligned to the button
         <div className="absolute bottom-full right-0 mb-2 z-[9999] bg-slate-900 border border-gray-700 rounded-lg shadow-2xl p-2 min-w-[160px]">
           
+          {/* EMOJIS */}
           <div className="flex gap-2 border-b border-gray-700 pb-2 mb-2">
             {emojis.map((emoji) => (
               <button
                 key={emoji}
-                // 🚨 FIX 3: onMouseDown registers the exact millisecond you click
                 onMouseDown={(e) => {
                   e.preventDefault();
                   onReact(emoji);
@@ -51,6 +77,7 @@ export function MessageActions({ isOwnMessage, onEdit, message, onReact }) {
             ))}
           </div>
 
+          {/* EDIT MESSAGE */}
           {isOwnMessage && (
             <button
               onMouseDown={(e) => {
@@ -64,6 +91,7 @@ export function MessageActions({ isOwnMessage, onEdit, message, onReact }) {
             </button>
           )}
 
+          {/* THREAD REPLY */}
           <button
             onMouseDown={(e) => {
               e.preventDefault();
