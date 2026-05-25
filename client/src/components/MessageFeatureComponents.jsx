@@ -19,27 +19,28 @@ export function MessageActions({ isOwnMessage, onEdit, message, onReact }) {
   const emojis = ["👍", "❤️", "😂", "😮", "😢"];
 
   return (
-    <div className="relative flex items-center">
-      {/* ARROW BUTTON */}
-
+    // 🚨 FIX 1: Elevate the z-index of the parent wrapper when open
+    <div className={`relative flex items-center ${showMenu ? "z-[9999]" : "z-10"}`}>
+      
       <button
         onClick={() => setShowMenu(!showMenu)}
-        className="bg-black text-white w-7 h-7 rounded-full flex items-center justify-center text-sm hover:bg-gray-800"
+        className="bg-black text-white w-7 h-7 rounded-full flex items-center justify-center text-sm hover:bg-gray-800 transition-colors"
       >
         ➜
       </button>
 
-      {/* MENU */}
-
       {showMenu && (
-        <div className="absolute top-8 z-50 bg-slate-900 border border-gray-700 rounded-lg shadow-lg p-2 min-w-[160px]">
-          {/* EMOJIS */}
-
+        // 🚨 FIX 2: 'bottom-full mb-2' makes it open UPWARDS instead of downwards
+        // 'right-0' keeps it aligned to the button
+        <div className="absolute bottom-full right-0 mb-2 z-[9999] bg-slate-900 border border-gray-700 rounded-lg shadow-2xl p-2 min-w-[160px]">
+          
           <div className="flex gap-2 border-b border-gray-700 pb-2 mb-2">
             {emojis.map((emoji) => (
               <button
                 key={emoji}
-                onClick={() => {
+                // 🚨 FIX 3: onMouseDown registers the exact millisecond you click
+                onMouseDown={(e) => {
+                  e.preventDefault();
                   onReact(emoji);
                   setShowMenu(false);
                 }}
@@ -50,29 +51,26 @@ export function MessageActions({ isOwnMessage, onEdit, message, onReact }) {
             ))}
           </div>
 
-          {/* EDIT */}
-
           {isOwnMessage && (
             <button
-              onClick={() => {
+              onMouseDown={(e) => {
+                e.preventDefault();
                 onEdit();
                 setShowMenu(false);
               }}
-              className="block w-full text-left text-white text-sm hover:text-blue-400 mb-2"
+              className="block w-full text-left text-white text-sm hover:text-blue-400 mb-2 py-1"
             >
               ✏️ Edit Message
             </button>
           )}
 
-          {/* THREAD REPLY */}
-
           <button
-            onClick={() => {
-              console.log("✅ CLICK REGISTERED! Sending to store:", message);
-              setReplyingToMessage(message); // 🚨 Talk to Zustand instead of onReply!
+            onMouseDown={(e) => {
+              e.preventDefault();
+              setReplyingToMessage(message);
               setShowMenu(false);
             }}
-            className="block w-full text-left text-white text-sm hover:text-green-400"
+            className="block w-full text-left text-white text-sm hover:text-green-400 py-1"
           >
             💬 Thread Reply
           </button>
