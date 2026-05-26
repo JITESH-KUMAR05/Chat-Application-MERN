@@ -13,6 +13,9 @@ import { userRouter } from "./APIs/UserAPI.js";
 import { channelRoute } from "./APIs/ChannelAPI.js";
 import { MessageModel } from './Models/MessageModel.js';
 import { ChannelModel } from './Models/ChannelModel.js';
+import { callRoute } from "./APIs/CallAPI.js";
+
+import { registerCallSockets } from "./socket/callSocket.js";
 
 dotenv.config();
 
@@ -38,6 +41,8 @@ const io = new Server(server, {
 
 io.on("connection", (socket) => {
     console.log("A user connected via socket", socket.id);
+
+    registerCallSockets(io, socket);
 
     socket.on("setup", async (userData) => { // Make async
         if (userData._id) {
@@ -80,6 +85,7 @@ app.set("socketio", io);
 app.use("/user-api", userRouter);
 app.use('/message-api', messageRoute);
 app.use('/channel-api', channelRoute);
+app.use("/call-api", callRoute);
 
 // 5. Invalid Route Handler (AFTER routes)
 app.use((req, res) => {

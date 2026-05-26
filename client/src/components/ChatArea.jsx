@@ -1,157 +1,641 @@
+// import { useEffect, useState } from "react";
+// import { useLocation } from "react-router";
+// import { useForm } from "react-hook-form";
+// import { sendMessage, getMessages, getChannelMessages } from "../services/api";
+// import { useMessageStore } from "../store/useMessageStore";
+// import { useAuthStore } from "../store/useAuthStore";
+// import MessageBubble from "./MessageBubble"; // Important for showing UI
+// import EmojiPicker from "emoji-picker-react";
+// import socket from "../services/socket";
+
+// export default function ChatArea(){
+//     const { register, handleSubmit, watch, setValue, reset } = useForm();
+//     const loc = useLocation();
+//     const [showPicker, setShowPicker] = useState(false);
+//     const messageValue = watch("message") || "";
+    
+//     // We already dispatched the selected user, let's grab the active chat partner
+//     const selectedUser = loc.state || null;  
+    
+//     // Grab messages from the Zustand store
+//     const messages = useMessageStore(state => state.messages);
+//     const setMessages = useMessageStore(state => state.setMessages);
+//     const addMessage = useMessageStore(state => state.addMessage);
+//     const currentUser = useAuthStore(state => state.user);
+
+//     // Fetch conversation when the exact chat changes
+//     useEffect(() => {
+//         if (!selectedUser) return;
+
+//         const loadChatHistory = async () => {
+//             try {
+//                 let res;
+//                 if (selectedUser.isChannel) {
+//                     res = await getChannelMessages(selectedUser._id);
+//                 } else {
+//                      res = await getMessages(selectedUser._id);
+//                 }
+                
+//                 // Based on your route: res.data.payload is the list of messages
+//                 setMessages(res.data.payload);
+//             } catch (err) {
+//                 console.error("Error loading chat:", err);
+//             }
+//         };
+
+//         loadChatHistory();
+//     }, [selectedUser, setMessages]);
+
+//     const sendMessageHandler = async (data) => {
+//         try {
+//             const reqBody = {
+//                 content: data.message,
+//             };
+            
+//             if (selectedUser.isChannel) {
+//                 reqBody.channel = selectedUser._id;
+//             } else {
+//                 reqBody.receiver = selectedUser._id;
+//             }
+            
+//             // Your backend send route
+//             const res = await sendMessage(reqBody);
+            
+//             // Push the newly sent message immediately into Zustand store
+//             // We assume res.data.payload holds the saved message object
+//             if (res.data && res.data.payload) {
+//                 addMessage(res.data.payload);
+//             }
+
+//             reset(); // Clear input field
+//         } catch(err) {
+//             console.error("Error sending message:", err);
+//         }
+//     }
+
+//     useEffect(() => {
+//         socket.on("reactionUpdated", (updatedMessage) => {
+//             console.log("reaction received", updatedMessage);
+//             setMessages((prev) =>
+//             prev.map((msg) =>
+//                 msg._id === updatedMessage._id ? updatedMessage : msg
+//             )
+//             );
+//         });
+
+//         return () => socket.off("reactionUpdated");
+//     }, []);
+
+//     if (!selectedUser) {
+//         return (
+//             <div className="flex-1 bg-slate-100 flex items-center justify-center">
+//                  <p className="text-gray-500">Please select a user to start chatting</p>
+//             </div>
+//         );
+//     }
+
+//     return(
+//     <div className="flex-1 flex flex-col bg-slate-50 h-full">
+
+//         {/* CHAT HEADER */}
+//         <div className="bg-white px-6 py-4 shadow-sm border-b border-gray-200">
+//             {selectedUser.isChannel ? (
+//                 <>
+//                    <h2 className="text-xl font-semibold text-gray-800"># {selectedUser.name}</h2>
+//                    <p className="text-sm text-gray-500">{selectedUser.members?.length || 0} members</p>
+//                 </>
+//             ) : (
+//                 <>
+//                    <h2 className="text-xl font-semibold text-gray-800">{selectedUser.firstName} {selectedUser.lastName || ""}</h2>
+//                    <p className="text-sm text-gray-500">{selectedUser.email}</p>
+//                 </>
+//             )}
+//         </div>
+
+//         {/* MESSAGES LIST */}
+//         <div className="flex-1 overflow-y-auto p-4 bg-slate-900 flex flex-col gap-2">
+//             {messages && messages.length > 0 ? (
+//                 messages.map((msg) => (
+//                     <MessageBubble key={msg._id} message={msg} currentUser={currentUser} />
+//                 ))
+//             ) : (
+//                 <div className="text-center text-gray-400 mt-10">No messages yet. Say hi!</div>
+//             )}
+//         </div>
+
+//         {/* MESSAGE INPUT */}
+//         <div className="p-4 bg-white border-t border-gray-200">
+//             <form onSubmit={handleSubmit(sendMessageHandler)} className="flex items-center gap-3">
+//                 <div className="relative">
+//                     <button type="button" onClick={() => setShowPicker(!showPicker)}>
+//                         ➕
+//                     </button>
+
+//                     {showPicker && (
+//                         <div className="absolute bottom-12 z-50">
+//                             <EmojiPicker onEmojiClick={(emoji) => {
+//                                 // setValue("emoji", messageValue + emoji.emoji);
+//                                 setValue("message", messageValue + emoji.emoji);
+//                             }} />
+//                         </div>
+//                     )}
+//                 </div>
+//                 <input 
+//                     {...register("message", { required: true })} 
+//                     type="text" 
+//                     placeholder="Type a message..." 
+//                     className="flex-1 border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500" 
+//                 />
+//                 <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors cursor-pointer">
+//                     Send
+//                 </button>
+//             </form>
+//         </div>
+
+//     </div>
+//     )
+// }
+
+
+
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router";
 import { useForm } from "react-hook-form";
-import { sendMessage, getMessages, getChannelMessages } from "../services/api";
+
+import {
+  sendMessage,
+  getMessages,
+  getChannelMessages,
+} from "../services/api";
+
 import { useMessageStore } from "../store/useMessageStore";
 import { useAuthStore } from "../store/useAuthStore";
-import MessageBubble from "./MessageBubble"; // Important for showing UI
+import { useCallStore } from "../store/useCallStore";
+import CallingModal from "./CallingModal";
+
+import MessageBubble from "./MessageBubble";
 import EmojiPicker from "emoji-picker-react";
 import socket from "../services/socket";
 
-export default function ChatArea(){
-    const { register, handleSubmit, watch, setValue, reset } = useForm();
-    const loc = useLocation();
-    const [showPicker, setShowPicker] = useState(false);
-    const messageValue = watch("message") || "";
-    
-    // We already dispatched the selected user, let's grab the active chat partner
-    const selectedUser = loc.state || null;  
-    
-    // Grab messages from the Zustand store
-    const messages = useMessageStore(state => state.messages);
-    const setMessages = useMessageStore(state => state.setMessages);
-    const addMessage = useMessageStore(state => state.addMessage);
-    const currentUser = useAuthStore(state => state.user);
+import {
+  createPeerConnection,
+  getPeerConnection,
+  closePeerConnection,
+} from "../services/webrtc";
 
-    // Fetch conversation when the exact chat changes
-    useEffect(() => {
-        if (!selectedUser) return;
+import VideoCallModal from "./VideoCallModal";
+import IncomingCallModal from "./IncomingCallModal";
 
-        const loadChatHistory = async () => {
-            try {
-                let res;
-                if (selectedUser.isChannel) {
-                    res = await getChannelMessages(selectedUser._id);
-                } else {
-                     res = await getMessages(selectedUser._id);
-                }
-                
-                // Based on your route: res.data.payload is the list of messages
-                setMessages(res.data.payload);
-            } catch (err) {
-                console.error("Error loading chat:", err);
-            }
-        };
+export default function ChatArea() {
 
-        loadChatHistory();
-    }, [selectedUser, setMessages]);
+  const { register, handleSubmit, watch, setValue, reset } =
+    useForm();
 
-    const sendMessageHandler = async (data) => {
-        try {
-            const reqBody = {
-                content: data.message,
-            };
-            
-            if (selectedUser.isChannel) {
-                reqBody.channel = selectedUser._id;
-            } else {
-                reqBody.receiver = selectedUser._id;
-            }
-            
-            // Your backend send route
-            const res = await sendMessage(reqBody);
-            
-            // Push the newly sent message immediately into Zustand store
-            // We assume res.data.payload holds the saved message object
-            if (res.data && res.data.payload) {
-                addMessage(res.data.payload);
-            }
+  const loc = useLocation();
 
-            reset(); // Clear input field
-        } catch(err) {
-            console.error("Error sending message:", err);
-        }
-    }
+  const [showPicker, setShowPicker] =
+    useState(false);
 
-    useEffect(() => {
-        socket.on("reactionUpdated", (updatedMessage) => {
-            console.log("reaction received", updatedMessage);
-            setMessages((prev) =>
-            prev.map((msg) =>
-                msg._id === updatedMessage._id ? updatedMessage : msg
-            )
+  const messageValue =
+    watch("message") || "";
+
+  const selectedUser = loc.state || null;
+
+  // MESSAGE STORE
+  const messages =
+    useMessageStore((state) => state.messages);
+
+  const setMessages =
+    useMessageStore((state) => state.setMessages);
+
+  const addMessage =
+    useMessageStore((state) => state.addMessage);
+
+  // AUTH
+  const currentUser =
+    useAuthStore((state) => state.user);
+
+  // CALL STORE
+  const {
+    incomingCall,
+    setIncomingCall,
+    callAccepted,
+    setCallAccepted,
+    localStream,
+    setLocalStream,
+    remoteStream,
+    setRemoteStream,
+    resetCall,
+  } = useCallStore();
+
+  const {
+    outgoingCall,
+    setOutgoingCall,
+    isCalling,
+    setActiveCallUser,
+    } = useCallStore();
+
+  // LOAD CHAT HISTORY
+  useEffect(() => {
+
+    if (!selectedUser) return;
+
+    const loadChatHistory = async () => {
+
+      try {
+
+        let res;
+
+        if (selectedUser.isChannel) {
+          res =
+            await getChannelMessages(
+              selectedUser._id
             );
+        } else {
+          res =
+            await getMessages(
+              selectedUser._id
+            );
+        }
+
+        setMessages(res.data.payload);
+
+      } catch (err) {
+        console.error(
+          "Error loading chat:",
+          err
+        );
+      }
+    };
+
+    loadChatHistory();
+
+  }, [selectedUser, setMessages]);
+
+  // SEND MESSAGE
+  const sendMessageHandler = async (data) => {
+
+    try {
+
+      const reqBody = {
+        content: data.message,
+      };
+
+      if (selectedUser.isChannel) {
+        reqBody.channel =
+          selectedUser._id;
+      } else {
+        reqBody.receiver =
+          selectedUser._id;
+      }
+
+      const res =
+        await sendMessage(reqBody);
+
+      if (
+        res.data &&
+        res.data.payload
+      ) {
+        addMessage(res.data.payload);
+      }
+
+      reset();
+
+    } catch (err) {
+      console.error(
+        "Error sending message:",
+        err
+      );
+    }
+  };
+
+  // REACTION SOCKET
+  useEffect(() => {
+
+    socket.on(
+      "reactionUpdated",
+      (updatedMessage) => {
+
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg._id === updatedMessage._id
+              ? updatedMessage
+              : msg
+          )
+        );
+      }
+    );
+
+    return () =>
+      socket.off("reactionUpdated");
+
+  }, []);
+
+  // START CALL
+  const startCall = async (
+    type = "video"
+  ) => {
+
+    try {
+
+      const stream =
+        await navigator.mediaDevices.getUserMedia({
+          video: type === "video",
+          audio: true,
         });
 
-        return () => socket.off("reactionUpdated");
-    }, []);
+      setLocalStream(stream);
 
-    if (!selectedUser) {
-        return (
-            <div className="flex-1 bg-slate-100 flex items-center justify-center">
-                 <p className="text-gray-500">Please select a user to start chatting</p>
-            </div>
+      setOutgoingCall({
+        receiver: selectedUser,
+        type,
+        });
+
+        setActiveCallUser(selectedUser);
+
+      const peer =
+        createPeerConnection(
+          (event) => {
+            setRemoteStream(
+              event.streams[0]
+            );
+          },
+          (candidate) => {
+
+            socket.emit(
+              "ice-candidate",
+              {
+                candidate,
+                to: selectedUser._id,
+              }
+            );
+          }
         );
-    }
 
-    return(
+      stream
+        .getTracks()
+        .forEach((track) => {
+          peer.addTrack(
+            track,
+            stream
+          );
+        });
+
+      const offer =
+        await peer.createOffer();
+
+      await peer.setLocalDescription(
+        offer
+      );
+
+      socket.emit("call-user", {
+        to: selectedUser._id,
+        from: currentUser,
+        offer,
+        callType: type,
+      });
+
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  // ACCEPT CALL
+  const acceptCall = async () => {
+
+    try {
+
+      const stream =
+        await navigator.mediaDevices.getUserMedia({
+          video:
+            incomingCall.callType ===
+            "video",
+          audio: true,
+        });
+
+      setLocalStream(stream);
+
+      const peer =
+        createPeerConnection(
+          (event) => {
+            setRemoteStream(
+              event.streams[0]
+            );
+          },
+          (candidate) => {
+
+            socket.emit(
+              "ice-candidate",
+              {
+                candidate,
+                to:
+                  incomingCall.from._id,
+              }
+            );
+          }
+        );
+
+      stream
+        .getTracks()
+        .forEach((track) => {
+          peer.addTrack(
+            track,
+            stream
+          );
+        });
+
+      await peer.setRemoteDescription(
+        new RTCSessionDescription(
+          incomingCall.offer
+        )
+      );
+
+      const answer =
+        await peer.createAnswer();
+
+      await peer.setLocalDescription(
+        answer
+      );
+
+      socket.emit("answer-call", {
+        to:
+          incomingCall.from._id,
+        answer,
+      });
+
+      setCallAccepted(true);
+
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  return (
+
     <div className="flex-1 flex flex-col bg-slate-50 h-full">
 
-        {/* CHAT HEADER */}
-        <div className="bg-white px-6 py-4 shadow-sm border-b border-gray-200">
-            {selectedUser.isChannel ? (
-                <>
-                   <h2 className="text-xl font-semibold text-gray-800"># {selectedUser.name}</h2>
-                   <p className="text-sm text-gray-500">{selectedUser.members?.length || 0} members</p>
-                </>
-            ) : (
-                <>
-                   <h2 className="text-xl font-semibold text-gray-800">{selectedUser.firstName} {selectedUser.lastName || ""}</h2>
-                   <p className="text-sm text-gray-500">{selectedUser.email}</p>
-                </>
-            )}
+      {/* HEADER */}
+      <div className="bg-white px-6 py-4 shadow-sm border-b border-gray-200 flex items-center justify-between">
+
+        <div>
+          {selectedUser.isChannel ? (
+            <>
+              <h2 className="text-xl font-semibold text-gray-800">
+                # {selectedUser.name}
+              </h2>
+
+              <p className="text-sm text-gray-500">
+                {
+                  selectedUser.members
+                    ?.length || 0
+                }{" "}
+                members
+              </p>
+            </>
+          ) : (
+            <>
+              <h2 className="text-xl font-semibold text-gray-800">
+                {selectedUser.firstName}{" "}
+                {
+                  selectedUser.lastName ||
+                  ""
+                }
+              </h2>
+
+              <p className="text-sm text-gray-500">
+                {selectedUser.email}
+              </p>
+            </>
+          )}
         </div>
 
-        {/* MESSAGES LIST */}
-        <div className="flex-1 overflow-y-auto p-4 bg-slate-900 flex flex-col gap-2">
-            {messages && messages.length > 0 ? (
-                messages.map((msg) => (
-                    <MessageBubble key={msg._id} message={msg} currentUser={currentUser} />
-                ))
-            ) : (
-                <div className="text-center text-gray-400 mt-10">No messages yet. Say hi!</div>
-            )}
-        </div>
+        {!selectedUser.isChannel && (
+          <div className="flex gap-3">
 
-        {/* MESSAGE INPUT */}
-        <div className="p-4 bg-white border-t border-gray-200">
-            <form onSubmit={handleSubmit(sendMessageHandler)} className="flex items-center gap-3">
-                <div className="relative">
-                    <button type="button" onClick={() => setShowPicker(!showPicker)}>
-                        ➕
-                    </button>
+            <button
+              onClick={() =>
+                startCall("audio")
+              }
+              className="bg-green-600 text-white px-4 py-2 rounded-lg"
+            >
+              Audio
+            </button>
 
-                    {showPicker && (
-                        <div className="absolute bottom-12 z-50">
-                            <EmojiPicker onEmojiClick={(emoji) => {
-                                // setValue("emoji", messageValue + emoji.emoji);
-                                setValue("message", messageValue + emoji.emoji);
-                            }} />
-                        </div>
-                    )}
-                </div>
-                <input 
-                    {...register("message", { required: true })} 
-                    type="text" 
-                    placeholder="Type a message..." 
-                    className="flex-1 border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500" 
+            <button
+              onClick={() =>
+                startCall("video")
+              }
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg"
+            >
+              Video
+            </button>
+
+          </div>
+        )}
+
+      </div>
+
+      {/* MESSAGES */}
+      <div className="flex-1 overflow-y-auto p-4 bg-slate-900 flex flex-col gap-2">
+
+        {messages &&
+        messages.length > 0 ? (
+
+          messages.map((msg) => (
+            <MessageBubble
+              key={msg._id}
+              message={msg}
+              currentUser={
+                currentUser
+              }
+            />
+          ))
+
+        ) : (
+
+          <div className="text-center text-gray-400 mt-10">
+            No messages yet. Say hi!
+          </div>
+
+        )}
+
+      </div>
+
+      {/* INPUT */}
+      <div className="p-4 bg-white border-t border-gray-200">
+
+        <form
+          onSubmit={handleSubmit(
+            sendMessageHandler
+          )}
+          className="flex items-center gap-3"
+        >
+
+          <div className="relative">
+
+            <button
+              type="button"
+              onClick={() =>
+                setShowPicker(
+                  !showPicker
+                )
+              }
+            >
+              ➕
+            </button>
+
+            {showPicker && (
+              <div className="absolute bottom-12 z-50">
+
+                <EmojiPicker
+                  onEmojiClick={(
+                    emoji
+                  ) => {
+
+                    setValue(
+                      "message",
+                      messageValue +
+                        emoji.emoji
+                    );
+                  }}
                 />
-                <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors cursor-pointer">
-                    Send
-                </button>
-            </form>
-        </div>
+
+              </div>
+            )}
+
+          </div>
+
+          <input
+            {...register(
+              "message",
+              { required: true }
+            )}
+            type="text"
+            placeholder="Type a message..."
+            className="flex-1 border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
+          />
+
+          <button
+            type="submit"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors cursor-pointer"
+          >
+            Send
+          </button>
+
+        </form>
+
+      </div>
+
+      {isCalling && !callAccepted && (
+
+    <CallingModal
+        receiver={outgoingCall?.receiver}
+        type={outgoingCall?.type}
+        onCancel={() => {}}
+    />
+
+    )}
 
     </div>
-    )
+  );
 }
