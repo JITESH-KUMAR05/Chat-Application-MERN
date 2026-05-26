@@ -17,7 +17,8 @@ import MessageBubble from "./MessageBubble";
 import EmojiPicker from "emoji-picker-react";
 import socket from "../services/socket";
 import CallingModal from "./CallingModal";
-import { createPeerConnection } from "../services/webrtc";
+import ChannelMembersModal from "./ChannelMembersModal";
+import { createPeerConnection, closePeerConnection } from "../services/webrtc";
 
 export default function ChatArea() {
   const { register, handleSubmit, watch, setValue, reset } = useForm();
@@ -25,6 +26,7 @@ export default function ChatArea() {
 
   const [showPicker, setShowPicker] = useState(false);
   const [file, setFile] = useState(null);
+  const [showMembersModal, setShowMembersModal] = useState(false);
 
   const pickerRef = useRef(null);
   const chatContainerRef = useRef(null);
@@ -88,7 +90,7 @@ export default function ChatArea() {
     return () => {
       socket.off("reactionUpdated");
     };
-  }, [selectedUser, setMessages]);
+  }, [setMessages]);
 
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -102,24 +104,19 @@ export default function ChatArea() {
   const sendMessageHandler = async (data) => {
     try {
       let res;
+      const formData = new FormData();
+      formData.append("content", data.message || "");
+
+      if (selectedUser.isChannel) {
+        formData.append("channel", selectedUser._id);
+      } else {
+        formData.append("receiver", selectedUser._id);
+      }
+      if (file) formData.append("file", file);
 
       if (replyingToMessage) {
-        // Thread reply — send via thread reply API
-        res = await sendThreadReplyApi(replyingToMessage._id, {
-          content: data.message || "",
-          receiver: selectedUser._id,
-        });
+        res = await sendThreadReplyApi(replyingToMessage._id, formData);
       } else {
-        const formData = new FormData();
-        formData.append("content", data.message || "");
-
-        if (selectedUser.isChannel) {
-          formData.append("channel", selectedUser._id);
-        } else {
-          formData.append("receiver", selectedUser._id);
-        }
-        if (file) formData.append("file", file);
-
         res = await sendMessage(formData);
       }
 
@@ -147,8 +144,34 @@ export default function ChatArea() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const cleanupCall = () => {
+    try {
+      const currentLocalStream = useCallStore.getState().localStream;
+      const currentRemoteStream = useCallStore.getState().remoteStream;
+
+      if (currentLocalStream) {
+        currentLocalStream.getTracks().forEach((track) => track.stop());
+      }
+      if (currentRemoteStream) {
+        currentRemoteStream.getTracks().forEach((track) => track.stop());
+      }
+
+      closePeerConnection();
+    } catch (err) {
+      console.error("Error cleaning up tracks:", err);
+    } finally {
+      useCallStore.getState().setCallAccepted(false);
+      useCallStore.getState().resetCall();
+    }
+  };
+
   const startCall = async (type = "video") => {
     try {
+      const currentLocalStream = useCallStore.getState().localStream;
+      if (currentLocalStream) {
+        currentLocalStream.getTracks().forEach(track => track.stop());
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({
         video: type === "video",
         audio: true,
@@ -176,9 +199,7 @@ export default function ChatArea() {
         callType: type,
       });
 
-      // Play outgoing ringtone
       window.playOutgoingSound?.();
-
     } catch (err) {
       console.log("Error starting call:", err);
     }
@@ -195,8 +216,6 @@ export default function ChatArea() {
   return (
     <>
       <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#020617] w-full">
-
-        {/* HEADER */}
         <div className="bg-[#1e293b] px-6 py-4 border-b border-slate-700 shrink-0 z-20 shadow-sm flex items-center justify-between">
           <div>
             {selectedUser.isChannel ? (
@@ -204,9 +223,12 @@ export default function ChatArea() {
                 <h2 className="text-xl font-semibold text-white">
                   # {selectedUser.name}
                 </h2>
-                <p className="text-sm text-slate-400">
+                <button 
+                  onClick={() => setShowMembersModal(true)}
+                  className="text-sm text-slate-400 hover:text-blue-400 hover:underline transition-colors mt-1"
+                >
                   {selectedUser.members?.length || 0} members
-                </p>
+                </button>
               </>
             ) : (
               <>
@@ -236,7 +258,6 @@ export default function ChatArea() {
           )}
         </div>
 
-        {/* MESSAGES */}
         <div
           ref={chatContainerRef}
           className="flex-1 overflow-y-auto px-4 py-3 min-h-0 w-full chat-scroll relative"
@@ -280,7 +301,6 @@ export default function ChatArea() {
           </div>
         </div>
 
-        {/* INPUT AREA */}
         <div className="p-4 bg-[#334155] border-t border-slate-700 shrink-0 z-20">
           {file && (
             <div className="text-sm text-blue-400 font-medium truncate max-w-sm mb-2 px-2 animate-fade-in-up">
@@ -288,7 +308,6 @@ export default function ChatArea() {
             </div>
           )}
 
-          {/* THREAD REPLY DOCK */}
           {replyingToMessage && (
             <div className="mb-3 bg-[#1e293b] rounded-lg p-3 border-l-4 border-blue-500 flex justify-between items-center shadow-lg mx-2 animate-fade-in-up">
               <div className="overflow-hidden">
@@ -356,12 +375,7 @@ export default function ChatArea() {
               type="submit"
               className="bg-blue-600 hover:bg-blue-500 text-white font-semibold w-12 h-12 flex items-center justify-center rounded-xl transition-all hover:scale-105 active:scale-95 shadow-md"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className="w-5 h-5 -ml-1"
-              >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 -ml-1">
                 <path d="M3.478 2.404a.75.75 0 0 0-.926.941l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.404Z" />
               </svg>
             </button>
@@ -369,24 +383,27 @@ export default function ChatArea() {
         </div>
       </div>
 
-      {/* CALLING MODAL — rendered OUTSIDE the flex column so it doesn't displace the input */}
       {isCalling && !callAccepted && (
         <CallingModal
           receiver={outgoingCall?.receiver}
           type={outgoingCall?.type}
           onCancel={() => {
-            // Stop outgoing ringtone immediately
             window.stopAllRingtones?.();
-
             socket.emit("cancel-call", {
               to: outgoingCall?.receiver?._id,
               from: currentUser._id,
               callType: outgoingCall?.type,
               callId: outgoingCall?.callId,
             });
-
-            resetCall();
+            cleanupCall();
           }}
+        />
+      )}
+
+      {showMembersModal && (
+        <ChannelMembersModal 
+          channel={selectedUser} 
+          onClose={() => setShowMembersModal(false)} 
         />
       )}
     </>

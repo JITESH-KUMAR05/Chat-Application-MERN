@@ -1,72 +1,52 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useMessageStore } from "../store/useMessageStore";
-import { getThreadRepliesApi } from "../services/messageFeaturesApi";
-
-/* ======================================================
-   MESSAGE ACTIONS
-   - Arrow is always visible (not hidden behind group-hover)
-   - For own messages: Edit + Thread Reply + Emoji
-   - For other messages: Thread Reply + Emoji
-====================================================== */
+import { editMessageApi, getThreadRepliesApi } from "../services/messageFeaturesApi";
+import socket from "../services/socket";
 
 export function MessageActions({ isOwnMessage, onEdit, message, onReact }) {
   const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef(null);
 
-  const setReplyingToMessage = useMessageStore(
-    (state) => state.setReplyingToMessage
-  );
-
+  const setReplyingToMessage = useMessageStore((state) => state.setReplyingToMessage);
   const emojis = ["👍", "❤️", "😂", "😮", "😢"];
 
-  // Close menu when clicking outside
   useEffect(() => {
-    if (!showMenu) return;
-    const handler = (e) => {
-      if (!e.target.closest("[data-msg-actions]")) setShowMenu(false);
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowMenu(false);
+      }
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+
+    if (showMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, [showMenu]);
 
   return (
-    <div className="relative flex items-center" data-msg-actions>
-
-      {/* ARROW BUTTON — always visible, no group-hover hiding */}
+    <div ref={menuRef} className={`relative flex items-center ${showMenu ? "z-[9999]" : "z-10"}`}>
       <button
-        onClick={() => setShowMenu((v) => !v)}
-        className="
-          bg-slate-700 hover:bg-slate-600
-          text-white
-          w-7 h-7
-          rounded-full
-          flex items-center justify-center
-          text-sm
-          transition-colors
-          flex-shrink-0
-        "
-        title="Message actions"
+        onClick={(e) => {
+          e.stopPropagation();
+          setShowMenu(!showMenu);
+        }}
+        className="bg-slate-800 text-slate-300 hover:text-white w-8 h-8 rounded-full flex items-center justify-center shadow-md border border-slate-600 focus:outline-none transition-colors"
       >
-        ➜
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+          <path fillRule="evenodd" d="M10.5 6a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zm0 6a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zm0 6a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0z" clipRule="evenodd" />
+        </svg>
       </button>
 
-      {/* DROPDOWN MENU */}
       {showMenu && (
-        <div
-          className={`
-            absolute top-9 z-[100]
-            bg-slate-900 border border-slate-700
-            rounded-xl shadow-2xl
-            p-3 min-w-[180px]
-            ${isOwnMessage ? "right-0" : "left-0"}
-          `}
-        >
-
-          {/* EMOJI ROW */}
-          <div className="flex gap-2 border-b border-slate-700 pb-2 mb-2">
+        <div className="absolute bottom-full right-0 mb-2 z-[9999] bg-slate-900 border border-gray-700 rounded-lg shadow-2xl p-2 min-w-[160px]">
+          <div className="flex gap-2 border-b border-gray-700 pb-2 mb-2">
             {emojis.map((emoji) => (
               <button
                 key={emoji}
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   onReact(emoji);
                   setShowMenu(false);
                 }}
@@ -77,47 +57,52 @@ export function MessageActions({ isOwnMessage, onEdit, message, onReact }) {
             ))}
           </div>
 
-          {/* EDIT — only for own messages */}
           {isOwnMessage && (
             <button
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 onEdit();
                 setShowMenu(false);
               }}
-              className="block w-full text-left text-white text-sm hover:text-blue-400 mb-2 py-1"
+              className="block w-full text-left text-white text-sm hover:bg-slate-800 px-2 py-1.5 rounded transition-colors"
             >
               ✏️ Edit Message
             </button>
           )}
 
-          {/* THREAD REPLY — for everyone */}
           <button
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               setReplyingToMessage(message);
               setShowMenu(false);
             }}
-            className="block w-full text-left text-white text-sm hover:text-green-400 py-1"
+            className="block w-full text-left text-white text-sm hover:bg-slate-800 px-2 py-1.5 rounded transition-colors"
           >
             💬 Thread Reply
           </button>
-
         </div>
       )}
     </div>
   );
 }
 
-
-/* ======================================================
-   THREAD REPLIES — shows existing replies under a message
-   Displays the parent context (image/text) + reply content
-====================================================== */
-
 export function ThreadReplies({ parentMessage, parentMessageId }) {
   const [replies, setReplies] = useState([]);
 
   useEffect(() => {
     fetchReplies();
+
+    const handleNewReply = (newMessage) => {
+      const incomingParentId = newMessage.parentMessage?._id || newMessage.parentMessage;
+      if (incomingParentId === parentMessageId) {
+        setReplies((prev) => [...prev, newMessage]);
+      }
+    };
+
+    socket.on("message Received", handleNewReply);
+    return () => {
+      socket.off("message Received", handleNewReply);
+    };
   }, [parentMessageId]);
 
   const fetchReplies = async () => {
@@ -125,7 +110,7 @@ export function ThreadReplies({ parentMessage, parentMessageId }) {
       const res = await getThreadRepliesApi(parentMessageId);
       setReplies(res.data.payload || []);
     } catch (err) {
-      console.log(err);
+      console.error(err);
     }
   };
 
@@ -133,63 +118,34 @@ export function ThreadReplies({ parentMessage, parentMessageId }) {
 
   return (
     <div className="mt-2 border-l-2 border-slate-600 pl-3 flex flex-col gap-2">
-
-      {/* PARENT PREVIEW — what message is being replied to */}
       {parentMessage && (
         <div className="bg-black/40 rounded-lg p-2 mb-1 opacity-80">
           <p className="text-[10px] text-slate-400 mb-1">
             ↩ Replying to {parentMessage.sender?.firstName || "User"}
           </p>
-
-          {/* Show image thumbnail if parent was an image */}
           {parentMessage.fileType?.startsWith("image") && (
-            <img
-              src={parentMessage.fileUrl}
-              alt="original"
-              className="h-12 w-16 object-cover rounded-md"
-            />
+            <img src={parentMessage.fileUrl} alt="original" className="h-12 w-16 object-cover rounded-md" />
           )}
-
-          {/* Show text snippet if parent was text */}
           {parentMessage.content && (
-            <p className="text-xs text-slate-300 truncate">
-              {parentMessage.content}
-            </p>
+            <p className="text-xs text-slate-300 truncate">{parentMessage.content}</p>
           )}
-
-          {/* Show file name for other files */}
-          {parentMessage.fileUrl &&
-            !parentMessage.fileType?.startsWith("image") && (
-              <p className="text-xs text-slate-300 truncate">
-                📎 {parentMessage.fileName}
-              </p>
-            )}
+          {parentMessage.fileUrl && !parentMessage.fileType?.startsWith("image") && (
+            <p className="text-xs text-slate-300 truncate">📎 {parentMessage.fileName}</p>
+          )}
         </div>
       )}
 
-      {/* REPLY BUBBLES */}
       {replies.map((reply) => (
         <div key={reply._id} className="bg-black/30 p-2 rounded-lg">
           <p className="text-[10px] text-blue-400 mb-0.5 font-semibold">
             {reply.sender?.firstName} {reply.sender?.lastName || ""}
           </p>
-
-          {/* Reply image */}
           {reply.fileType?.startsWith("image") && (
-            <img
-              src={reply.fileUrl}
-              alt="reply img"
-              className="rounded-lg max-h-32 mb-1 object-cover"
-            />
+            <img src={reply.fileUrl} alt="reply img" className="rounded-lg max-h-32 mb-1 object-cover" />
           )}
-
           <p className="text-sm text-white">{reply.content}</p>
-
           <p className="text-[10px] text-slate-500 mt-1">
-            {new Date(reply.createdAt).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+            {new Date(reply.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
             {reply.isEdited && " · edited"}
           </p>
         </div>
@@ -198,29 +154,49 @@ export function ThreadReplies({ parentMessage, parentMessageId }) {
   );
 }
 
-
-/* ======================================================
-   MESSAGE REACTIONS
-====================================================== */
-
 export function MessageReactions({ reactions }) {
   if (!reactions || reactions.length === 0) return null;
 
   return (
     <div className="flex gap-1 flex-wrap mt-1">
       {reactions.map((reaction, index) => (
-        <div
-          key={index}
-          className="
-            bg-black/40 px-2 py-0.5 rounded-full
-            text-xs flex items-center gap-1
-            border border-slate-700/50
-          "
-        >
+        <div key={index} className="bg-black/40 px-2 py-0.5 rounded-full text-xs flex items-center gap-1 border border-slate-700/50">
           <span>{reaction.emoji}</span>
           <span className="text-slate-300">{reaction.users?.length || 1}</span>
         </div>
       ))}
+    </div>
+  );
+}
+
+export function EditMessageModal({ message, onClose, onSuccess }) {
+  const [content, setContent] = useState(message.content);
+
+  const handleSave = async () => {
+    try {
+      const res = await editMessageApi(message._id, { content });
+      onSuccess(res.data.payload);
+      onClose();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
+      <div className="bg-slate-900 p-5 rounded-xl w-[400px]">
+        <h2 className="text-white text-lg mb-4">Edit Message</h2>
+        <textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          className="w-full p-3 rounded-lg bg-slate-800 text-white outline-none"
+          rows={4}
+        />
+        <div className="flex justify-end gap-3 mt-4">
+          <button onClick={onClose} className="bg-gray-600 px-4 py-2 rounded-lg text-white">Cancel</button>
+          <button onClick={handleSave} className="bg-blue-600 px-4 py-2 rounded-lg text-white">Save</button>
+        </div>
+      </div>
     </div>
   );
 }
