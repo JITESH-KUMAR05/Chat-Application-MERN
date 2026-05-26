@@ -17,6 +17,10 @@
       "destination": "https://chat-app-api-fmbegkegfwayc0dk.canadacentral-01.azurewebsites.net/dashboard-api/:path*"
     },
     {
+      "source": "/message-feature-api/:path*",
+      "destination": "https://chat-app-api-fmbegkegfwayc0dk.canadacentral-01.azurewebsites.net/message-feature-api/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
