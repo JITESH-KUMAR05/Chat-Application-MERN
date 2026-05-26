@@ -17,7 +17,6 @@ import MessageBubble from "./MessageBubble";
 import EmojiPicker from "emoji-picker-react";
 import socket from "../services/socket";
 import CallingModal from "./CallingModal";
-import ChannelMembersModal from "./ChannelMembersModal";
 import { createPeerConnection, closePeerConnection } from "../services/webrtc";
 
 export default function ChatArea() {
@@ -26,7 +25,6 @@ export default function ChatArea() {
 
   const [showPicker, setShowPicker] = useState(false);
   const [file, setFile] = useState(null);
-  const [showMembersModal, setShowMembersModal] = useState(false);
 
   const pickerRef = useRef(null);
   const chatContainerRef = useRef(null);
@@ -223,12 +221,9 @@ export default function ChatArea() {
                 <h2 className="text-xl font-semibold text-white">
                   # {selectedUser.name}
                 </h2>
-                <button 
-                  onClick={() => setShowMembersModal(true)}
-                  className="text-sm text-slate-400 hover:text-blue-400 hover:underline transition-colors mt-1"
-                >
+                <p className="text-sm text-slate-400">
                   {selectedUser.members?.length || 0} members
-                </button>
+                </p>
               </>
             ) : (
               <>
@@ -397,13 +392,6 @@ export default function ChatArea() {
             });
             cleanupCall();
           }}
-        />
-      )}
-
-      {showMembersModal && (
-        <ChannelMembersModal 
-          channel={selectedUser} 
-          onClose={() => setShowMembersModal(false)} 
         />
       )}
     </>
