@@ -176,7 +176,7 @@ export default function Navbar() {
           src={currentUser?.profilePic || profile}
           alt="profile"
           className="w-10 h-10 rounded-full object-cover border cursor-pointer hover:scale-105 transition"
-          onClick={() => navigate("/chat/dashboard")}
+          onClick={() => navigate("/profile")}
         />
 
         <button
