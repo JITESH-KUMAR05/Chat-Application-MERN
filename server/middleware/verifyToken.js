@@ -1,28 +1,50 @@
 import jwt from "jsonwebtoken";
 
-export const verifyToken = async (req, res, next) => {
+export const verifyToken = (
+  req,
+  res,
+  next,
+) => {
+
   try {
-    let token = req.cookies?.token;
+
+    const token =
+      req.cookies.token;
 
     if (!token) {
-      return res
-        .status(401)
-        .json({ message: "Unauthorized req, Please Login" });
+
+      return res.status(401).json({
+        error: "Unauthorized",
+      });
+
     }
 
-    let decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded =
+      jwt.verify(
+        token,
+        process.env.JWT_SECRET,
+      );
 
-    req.user = decodedToken;
+    req.user = {
+
+      userId:
+        decoded.userId,
+
+      email:
+        decoded.email,
+
+    };
 
     next();
-  } catch (err) {
-    if (err.name === "TokenExpiredError") {
-      return res.status(401).json({ message: "Session Expired.." });
-    }
-    if (err.name === "JsonWebTokenError") {
-      return res.status(401).json({ message: "Invalid token. Please login" });
-    }
 
-    return res.status(500).json({ message: "Authentication Error" });
+  } catch (err) {
+
+    console.log(err);
+
+    return res.status(401).json({
+      error: "Invalid token",
+    });
+
   }
+
 };

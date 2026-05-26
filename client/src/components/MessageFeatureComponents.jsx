@@ -1,87 +1,86 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useMessageStore } from "../store/useMessageStore";
-import {
-  editMessageApi,
-  getThreadRepliesApi,
-} from "../services/messageFeaturesApi";
+import { getThreadRepliesApi } from "../services/messageFeaturesApi";
 
 /* ======================================================
    MESSAGE ACTIONS
+   - Arrow is always visible (not hidden behind group-hover)
+   - For own messages: Edit + Thread Reply + Emoji
+   - For other messages: Thread Reply + Emoji
 ====================================================== */
 
 export function MessageActions({ isOwnMessage, onEdit, message, onReact }) {
   const [showMenu, setShowMenu] = useState(false);
-  
-  // 🚨 1. Create the reference (hitbox) for this specific menu
-  const menuRef = useRef(null); 
 
   const setReplyingToMessage = useMessageStore(
-    (state) => state.setReplyingToMessage,
+    (state) => state.setReplyingToMessage
   );
 
   const emojis = ["👍", "❤️", "😂", "😮", "😢"];
 
-  // 🚨 2. The Click-Outside Listener
+  // Close menu when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      // If the menu is open, AND the click happened outside our menuRef hitbox...
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setShowMenu(false); // Close it!
-      }
+    if (!showMenu) return;
+    const handler = (e) => {
+      if (!e.target.closest("[data-msg-actions]")) setShowMenu(false);
     };
-
-    // Only attach the heavy event listener if the menu is actually open
-    if (showMenu) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-
-    // Cleanup function so we don't cause memory leaks
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, [showMenu]);
 
   return (
-    // 🚨 3. Attach the menuRef to the absolute outermost div of this component
-    <div 
-      ref={menuRef} 
-      className={`relative flex items-center ${showMenu ? "z-[9999]" : "z-10"}`}
-    >
-      
-      {/* TRIGGER BUTTON */}
+    <div className="relative flex items-center" data-msg-actions>
+
+      {/* ARROW BUTTON — always visible, no group-hover hiding */}
       <button
-        onClick={() => setShowMenu(!showMenu)}
-        className="bg-black text-white w-7 h-7 rounded-full flex items-center justify-center text-sm hover:bg-gray-800 transition-colors"
+        onClick={() => setShowMenu((v) => !v)}
+        className="
+          bg-slate-700 hover:bg-slate-600
+          text-white
+          w-7 h-7
+          rounded-full
+          flex items-center justify-center
+          text-sm
+          transition-colors
+          flex-shrink-0
+        "
+        title="Message actions"
       >
         ➜
       </button>
 
       {/* DROPDOWN MENU */}
       {showMenu && (
-        <div className="absolute bottom-full right-0 mb-2 z-[9999] bg-slate-900 border border-gray-700 rounded-lg shadow-2xl p-2 min-w-[160px]">
-          
-          {/* EMOJIS */}
-          <div className="flex gap-2 border-b border-gray-700 pb-2 mb-2">
+        <div
+          className={`
+            absolute top-9 z-[100]
+            bg-slate-900 border border-slate-700
+            rounded-xl shadow-2xl
+            p-3 min-w-[180px]
+            ${isOwnMessage ? "right-0" : "left-0"}
+          `}
+        >
+
+          {/* EMOJI ROW */}
+          <div className="flex gap-2 border-b border-slate-700 pb-2 mb-2">
             {emojis.map((emoji) => (
               <button
                 key={emoji}
-                onMouseDown={(e) => {
-                  e.preventDefault();
+                onClick={() => {
                   onReact(emoji);
                   setShowMenu(false);
                 }}
-                className="hover:scale-125 transition"
+                className="hover:scale-125 transition text-lg"
               >
                 {emoji}
               </button>
             ))}
           </div>
 
-          {/* EDIT MESSAGE */}
+          {/* EDIT — only for own messages */}
           {isOwnMessage && (
             <button
-              onMouseDown={(e) => {
-                e.preventDefault();
+              onClick={() => {
                 onEdit();
                 setShowMenu(false);
               }}
@@ -91,10 +90,9 @@ export function MessageActions({ isOwnMessage, onEdit, message, onReact }) {
             </button>
           )}
 
-          {/* THREAD REPLY */}
+          {/* THREAD REPLY — for everyone */}
           <button
-            onMouseDown={(e) => {
-              e.preventDefault();
+            onClick={() => {
               setReplyingToMessage(message);
               setShowMenu(false);
             }}
@@ -102,17 +100,20 @@ export function MessageActions({ isOwnMessage, onEdit, message, onReact }) {
           >
             💬 Thread Reply
           </button>
+
         </div>
       )}
     </div>
   );
 }
 
+
 /* ======================================================
-   THREAD REPLIES
+   THREAD REPLIES — shows existing replies under a message
+   Displays the parent context (image/text) + reply content
 ====================================================== */
 
-export function ThreadReplies({ parentMessageId }) {
+export function ThreadReplies({ parentMessage, parentMessageId }) {
   const [replies, setReplies] = useState([]);
 
   useEffect(() => {
@@ -122,79 +123,104 @@ export function ThreadReplies({ parentMessageId }) {
   const fetchReplies = async () => {
     try {
       const res = await getThreadRepliesApi(parentMessageId);
-
       setReplies(res.data.payload || []);
     } catch (err) {
       console.log(err);
     }
   };
 
+  if (replies.length === 0) return null;
+
   return (
-    <div className="ml-4 mt-2 flex flex-col gap-2">
+    <div className="mt-2 border-l-2 border-slate-600 pl-3 flex flex-col gap-2">
+
+      {/* PARENT PREVIEW — what message is being replied to */}
+      {parentMessage && (
+        <div className="bg-black/40 rounded-lg p-2 mb-1 opacity-80">
+          <p className="text-[10px] text-slate-400 mb-1">
+            ↩ Replying to {parentMessage.sender?.firstName || "User"}
+          </p>
+
+          {/* Show image thumbnail if parent was an image */}
+          {parentMessage.fileType?.startsWith("image") && (
+            <img
+              src={parentMessage.fileUrl}
+              alt="original"
+              className="h-12 w-16 object-cover rounded-md"
+            />
+          )}
+
+          {/* Show text snippet if parent was text */}
+          {parentMessage.content && (
+            <p className="text-xs text-slate-300 truncate">
+              {parentMessage.content}
+            </p>
+          )}
+
+          {/* Show file name for other files */}
+          {parentMessage.fileUrl &&
+            !parentMessage.fileType?.startsWith("image") && (
+              <p className="text-xs text-slate-300 truncate">
+                📎 {parentMessage.fileName}
+              </p>
+            )}
+        </div>
+      )}
+
+      {/* REPLY BUBBLES */}
       {replies.map((reply) => (
         <div key={reply._id} className="bg-black/30 p-2 rounded-lg">
-          <p className="text-xs text-blue-400">{reply.sender?.firstName}</p>
+          <p className="text-[10px] text-blue-400 mb-0.5 font-semibold">
+            {reply.sender?.firstName} {reply.sender?.lastName || ""}
+          </p>
+
+          {/* Reply image */}
+          {reply.fileType?.startsWith("image") && (
+            <img
+              src={reply.fileUrl}
+              alt="reply img"
+              className="rounded-lg max-h-32 mb-1 object-cover"
+            />
+          )}
 
           <p className="text-sm text-white">{reply.content}</p>
 
-          {reply.isEdited && (
-            <p className="text-[10px] text-gray-400 mt-1">
-              edited · {new Date(reply.editedAt).toLocaleTimeString()}
-            </p>
-          )}
+          <p className="text-[10px] text-slate-500 mt-1">
+            {new Date(reply.createdAt).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+            {reply.isEdited && " · edited"}
+          </p>
         </div>
       ))}
     </div>
   );
 }
 
+
 /* ======================================================
-   EDIT MESSAGE MODAL
+   MESSAGE REACTIONS
 ====================================================== */
 
-export function EditMessageModal({ message, onClose, onSuccess }) {
-  const [content, setContent] = useState(message.content);
-
-  const handleSave = async () => {
-    try {
-      const res = await editMessageApi(message._id, { content });
-
-      onSuccess(res.data.payload);
-
-      onClose();
-    } catch (err) {
-      console.log(err);
-    }
-  };
+export function MessageReactions({ reactions }) {
+  if (!reactions || reactions.length === 0) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
-      <div className="bg-slate-900 p-5 rounded-xl w-[400px]">
-        <h2 className="text-white text-lg mb-4">Edit Message</h2>
-
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          className="w-full p-3 rounded-lg bg-slate-800 text-white"
-          rows={4}
-        />
-
-        <div className="flex justify-end gap-3 mt-4">
-          <button
-            onClick={onClose}
-            className="bg-gray-600 px-4 py-2 rounded-lg text-white"
-          >
-            Cancel
-          </button>
-
-          <button
-            onClick={handleSave}
-            className="bg-blue-600 px-4 py-2 rounded-lg text-white"
-          >
-            Save
-          </button>
+    <div className="flex gap-1 flex-wrap mt-1">
+      {reactions.map((reaction, index) => (
+        <div
+          key={index}
+          className="
+            bg-black/40 px-2 py-0.5 rounded-full
+            text-xs flex items-center gap-1
+            border border-slate-700/50
+          "
+        >
+          <span>{reaction.emoji}</span>
+          <span className="text-slate-300">{reaction.users?.length || 1}</span>
         </div>
-      </div>
+      ))}
     </div>
   );
 }

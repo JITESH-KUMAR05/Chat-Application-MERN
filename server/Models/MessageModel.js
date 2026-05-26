@@ -2,6 +2,10 @@ import mongoose, { Schema, model } from "mongoose";
 
 const messageSchema = new Schema(
   {
+    // =================================================
+    // USER REFERENCES
+    // =================================================
+
     sender: {
       type: Schema.Types.ObjectId,
       ref: "user",
@@ -17,26 +21,28 @@ const messageSchema = new Schema(
       ref: "channel",
     },
 
+    // =================================================
+    // THREAD REPLIES
+    // =================================================
+
     parentMessage: {
       type: Schema.Types.ObjectId,
       ref: "message",
       default: null,
     },
 
-    isEdited: {
-      type: Boolean,
-      default: false,
-    },
-
-    editedAt: {
-      type: Date,
-      default: null,
-    },
+    // =================================================
+    // MESSAGE CONTENT
+    // =================================================
 
     content: {
       type: String,
       default: "",
     },
+
+    // =================================================
+    // FILE SUPPORT
+    // =================================================
 
     fileUrl: {
       type: String,
@@ -53,28 +59,84 @@ const messageSchema = new Schema(
       default: "",
     },
 
+    // =================================================
+    // MESSAGE TYPE
+    // =================================================
+
+    messageType: {
+      type: String,
+      enum: ["text", "file", "call", "image", "video", "link"],
+      default: "text",
+    },
+
+    // =================================================
+    // CALL LOG SUPPORT
+    // =================================================
+
+    callDuration: {
+      type: String,
+      default: "",
+    },
+
+    callStatus: {
+      type: String,
+      enum: ["", "missed", "rejected", "ended"],
+      default: "",
+    },
+
+    callType: {
+      type: String,
+      enum: ["", "audio", "video"],
+      default: "",
+    },
+
+    // =================================================
+    // EDIT SUPPORT
+    // =================================================
+
+    isEdited: {
+      type: Boolean,
+      default: false,
+    },
+
+    editedAt: {
+      type: Date,
+      default: null,
+    },
+
+    // =================================================
+    // REACTIONS  ← FIXED: was { userId, emoji }, now { emoji, users[] }
+    // =================================================
+
     reactions: {
       type: [
         {
-          userId: {
-            type: Schema.Types.ObjectId,
-            ref: "user",
-          },
-
-          emoji: String,
+          emoji: { type: String, required: true },
+          users: [{ type: Schema.Types.ObjectId, ref: "user" }],
         },
       ],
-
       default: [],
     },
+
+    // =================================================
+    // MESSAGE STATUS
+    // =================================================
+
     status: {
       type: String,
       enum: ["sent", "delivered", "seen"],
       default: "sent",
     },
+
+    // =================================================
+    // LINK PREVIEW SUPPORT
+    // =================================================
+
+    previewImage:       { type: String, default: "" },
+    previewTitle:       { type: String, default: "" },
+    previewDescription: { type: String, default: "" },
   },
   {
-    strict: "throw",
     timestamps: true,
     versionKey: false,
   },

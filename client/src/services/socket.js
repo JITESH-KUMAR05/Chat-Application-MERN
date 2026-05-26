@@ -6,45 +6,26 @@ const SOCKET_URL = (
   "http://localhost:4000"
 ).replace(/\/$/, "");
 
-const socket = io(SOCKET_URL, {
-  withCredentials: true,
-});
+const socket = io(
 
-/* ======================================================
-   SOCKET HELPERS
-====================================================== */
+  SOCKET_URL,
 
-export const setupSocketListeners = (useMessageStore) => {
-  const {
-    receiveMessage,
-    updateMessageReaction,
-    updateMessage,
-    addThreadReply,
-  } = useMessageStore.getState();
+  {
 
-  /* NEW MESSAGE */
+    withCredentials: true,
 
-  socket.on("message Received", (message) => {
-    receiveMessage(message);
-  });
+    transports: ["websocket"],
 
-  /* REACTION UPDATE */
+    autoConnect: true,
 
-  socket.on("reactionUpdated", (updatedMessage) => {
-    updateMessageReaction(updatedMessage);
-  });
+    reconnection: true,
 
-  /* MESSAGE EDITED */
+    reconnectionAttempts: 10,
 
-  socket.on("message edited", (updatedMessage) => {
-    updateMessage(updatedMessage);
-  });
+    reconnectionDelay: 1000,
 
-  /* THREAD REPLY */
+  },
 
-  socket.on("thread reply", (replyMessage) => {
-    addThreadReply(replyMessage);
-  });
-};
+);
 
 export default socket;

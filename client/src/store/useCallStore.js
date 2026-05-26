@@ -19,11 +19,14 @@ export const useCallStore = create((set) => ({
 
   callType: null,
 
+  // FIXED
   setIncomingCall: (call) =>
     set({
       incomingCall: call,
-      caller: call.from,
-      callType: call.callType,
+
+      caller: call ? call.from : null,
+
+      callType: call ? call.callType : null,
     }),
 
   setOutgoingCall: (call) =>

@@ -5,6 +5,7 @@ import {
   sendThreadReply,
   getThreadReplies,
   markMessagesAsSeen,
+  reactToMessage,
 } from "../controllers/messageFeatures.controller.js";
 
 import { verifyToken } from "../middleware/verifyToken.js";
@@ -36,4 +37,14 @@ messageFeaturesRoute.get(
   getThreadReplies,
 );
 
+/* ======================================================
+   MARK MESSAGES AS SEEN
+====================================================== */
+
 messageFeaturesRoute.post("/mark-seen", verifyToken, markMessagesAsSeen);
+
+/* ======================================================
+   REACT TO MESSAGE  ← THIS WAS MISSING
+====================================================== */
+
+messageFeaturesRoute.post("/react/:messageId", verifyToken, reactToMessage);

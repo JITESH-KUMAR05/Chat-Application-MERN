@@ -86,10 +86,17 @@ userRouter.post("/login", async (req, res) => {
   );
 
   res.cookie("token", token, {
-    httpOnly: true,
-    sameSite: "none",
-    secure: true,
-  });
+
+  httpOnly: true,
+
+  secure: false,
+
+  sameSite: "lax",
+
+  maxAge:
+    1000 * 60 * 60 * 24 * 7,
+
+});
   const userObj = user.toObject();
   delete userObj.password;
 
@@ -184,10 +191,14 @@ userRouter.post(
 
 userRouter.get("/logout", verifyToken, async (req, res) => {
   res.clearCookie("token", {
-    httpOnly: true,
-    secure: true,
-    sameSite: "none",
-  });
+
+  httpOnly: true,
+
+  secure: false,
+
+  sameSite: "lax",
+
+});
   res.status(200).json({ message: "logged out successfully" });
 });
 

@@ -94,7 +94,7 @@ messageRoute.get("/messages/:id", verifyToken, async (req, res) => {
     .sort({ createdAt: 1 })
 
     .populate("sender", "firstName lastName email profilePic")
-    .populate("reactions.userId", "username lastName email")
+    .populate("reactions.users", "firstName lastName email")
     .populate("parentMessage");
 
   res.status(200).json({
@@ -117,14 +117,22 @@ messageRoute.get("/sidebar-users", verifyToken, async (req, res) => {
   const contactIds = new Set();
 
   messages.forEach((msg) => {
-    if (msg.sender.toString() === myId.toString() && msg.receiver) {
-      contactIds.add(msg.receiver.toString());
-    }
-    if (msg.receiver?.toString() === myId.toString()) {
-      contactIds.add(msg.sender.toString());
-    }
-  });
 
+  if (
+    msg.sender?.toString() === myId.toString() &&
+    msg.receiver
+  ) {
+    contactIds.add(msg.receiver.toString());
+  }
+
+  if (
+    msg.receiver?.toString() === myId.toString() &&
+    msg.sender
+  ) {
+    contactIds.add(msg.sender.toString());
+  }
+
+});
   const contactIdsArray = Array.from(contactIds);
 
   const sidebarUsers = await UserModel.find({
@@ -160,7 +168,7 @@ messageRoute.get(
       .sort({ createdAt: 1 })
 
       .populate("sender", "firstName lastName email profilePic")
-      .populate("reactions.userId", "username lastName email")
+      .populate("reactions.users", "firstName lastName email")
       .populate("parentMessage");
 
     res.status(200).json({
@@ -210,7 +218,7 @@ messageRoute.post("/messages/:messageId/react", async (req, res) => {
 
   const updatedMessage = await MessageModel.findById(messageId)
     .populate("sender", "firstName lastName email profilePic")
-    .populate("reactions.userId", "username firstName email")
+    .populate("reactions.users", "firstName lastName email")
     .populate("parentMessage");
 
   const io = req.app.get("socketio");

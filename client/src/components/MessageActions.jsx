@@ -5,7 +5,7 @@ import { useMessageStore } from "../store/useMessageStore";
 export default function MessageActions({
   isOwnMessage,
   onEdit,
-  message, // 🚨 Ask for the 'message' object instead of 'onReply'
+  message, 
 }) {
   const [showActions, setShowActions] = useState(false);
 
@@ -15,7 +15,7 @@ export default function MessageActions({
 
   return (
     <div
-      className="absolute top-0 right-0 -mt-4 mr-2" // Added slight negative margin so it floats nicely
+      className="absolute top-0 right-0 -mt-4 mr-2" 
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
     >
@@ -32,7 +32,7 @@ export default function MessageActions({
 
           <button
             onMouseDown={(e) => {
-              e.preventDefault(); // Prevents focus issues
+              e.preventDefault();
               console.log("SUCCESS! Message sent to store:", message);
               setReplyingToMessage(message);
             }}

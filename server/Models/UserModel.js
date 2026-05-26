@@ -6,9 +6,11 @@ const userSchema = new Schema(
       type: String,
       required: true,
     },
+
     lastName: {
       type: String,
     },
+
     username: {
       type: String,
       unique: true,
@@ -16,11 +18,13 @@ const userSchema = new Schema(
       trim: true,
       sparse: true,
     },
+
     email: {
       type: String,
       required: true,
       unique: true,
     },
+
     password: {
       type: String,
 
@@ -28,20 +32,31 @@ const userSchema = new Schema(
         return !this.googleId;
       },
     },
+
     googleId: {
       type: String,
       unique: true,
-      sparse: true, // Allows nulls for traditional email/pass users
+      sparse: true,
     },
+
     profilePic: {
       type: String,
     },
+
     tagLine: {
       type: String,
     },
+
+    // ADDED FIELD
+    lastSeen: {
+      type: Date,
+      default: null,
+    },
+
     notes: [
       {
         text: String,
+
         createdAt: {
           type: Date,
           default: Date.now,

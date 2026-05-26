@@ -1,222 +1,527 @@
 import { create } from "zustand";
 
-import { getSidebarUsers, getMyChannels } from "../services/api";
+import {
+  getSidebarUsers,
+  getMyChannels,
+} from "../services/api";
 
-export const useMessageStore = create((set, get) => ({
-  messages: [],
+export const useMessageStore =
+  create((set, get) => ({
 
-  replyingTo: null, 
-  
-  setReplyingTo: (message) => set({ replyingTo: message }),
+    messages: [],
 
-  selectedUser: null,
+    selectedUser: null,
 
-  unreadCounts: {},
+    unreadCounts: {},
 
-  sidebarUsers: [],
+    sidebarUsers: [],
 
-  channels: [],
+    channels: [],
 
-  replyingToMessage: null,
+    replyingToMessage: null,
 
-  setReplyingToMessage: (message) => set({ replyingToMessage: message }),
 
-  markStoreMessagesAsSeen: () =>
-    set((state) => ({
-      messages: state.messages.map((msg) => ({
-        ...msg,
-        status: "seen",
-      })),
-    })),
-  /* ======================================================
-       LOAD SIDEBAR USERS
-    ====================================================== */
 
-  loadSidebarUsers: async () => {
-    try {
-      const res = await getSidebarUsers();
+    // =====================================================
+    // REPLY
+    // =====================================================
 
-      set({
-        sidebarUsers: res.data.payload || res.data,
-      });
-    } catch (error) {
-      console.error("Error fetching sidebar users:", error);
-    }
-  },
+    setReplyingToMessage:
+      (message) =>
 
-  /* ======================================================
-       LOAD CHANNELS
-    ====================================================== */
+        set({
 
-  loadChannels: async () => {
-    try {
-      const res = await getMyChannels();
+          replyingToMessage:
+            message,
 
-      set({
-        channels: res.data.payload || res.data,
-      });
-    } catch (error) {
-      console.error("Error fetching channels:", error);
-    }
-  },
+        }),
 
-  /* ======================================================
-       SET MESSAGES
-    ====================================================== */
 
-  setMessages: (messages) =>
-    set((state) => ({
-      messages:
-        typeof messages === "function" ? messages(state.messages) : messages,
-    })),
 
-  /* ======================================================
-       ADD MESSAGE
-    ====================================================== */
+    // =====================================================
+    // MARK SEEN
+    // =====================================================
 
-  addMessage: (message) => {
-    set((state) => {
-      const isDuplicate = state.messages.some((msg) => msg._id === message._id);
+    markStoreMessagesAsSeen:
+      () =>
 
-      if (isDuplicate) {
-        return state;
-      }
+        set((state) => ({
 
-      return {
-        messages: [...state.messages, message],
-      };
-    });
+          messages:
+            state.messages.map(
+              (msg) => ({
 
-    get().loadSidebarUsers();
+                ...msg,
 
-    get().loadChannels();
-  },
+                status: "seen",
 
-  /* ======================================================
-       UPDATE MESSAGE
-       (FOR EDITED MESSAGE)
-    ====================================================== */
+              }),
+            ),
 
-  updateMessage: (updatedMessage) => {
-    set((state) => ({
-      messages: state.messages.map((msg) =>
-        msg._id.toString() === updatedMessage._id.toString()
-          ? {
-              ...msg,
-              ...updatedMessage,
-            }
-          : msg,
-      ),
-    }));
-  },
+        })),
 
-  /* ======================================================
-       ADD THREAD REPLY
-    ====================================================== */
 
-  addThreadReply: (replyMessage) => {
-    set((state) => {
-      const isDuplicate = state.messages.some(
-        (msg) => msg._id === replyMessage._id,
-      );
 
-      if (isDuplicate) {
-        return state;
-      }
+    // =====================================================
+    // LOAD SIDEBAR USERS
+    // =====================================================
 
-      return {
-        messages: [...state.messages, replyMessage],
-      };
-    });
-  },
+    loadSidebarUsers:
+      async () => {
 
-  /* ======================================================
-       SELECTED USER
-    ====================================================== */
+        try {
 
-  setSelectedUser: (user) =>
-    set((state) => ({
-      selectedUser: user,
+          const res =
+            await getSidebarUsers();
 
-      unreadCounts: user
-        ? {
-            ...state.unreadCounts,
-            [user._id]: 0,
+          set({
+
+            sidebarUsers:
+
+              res.data.payload ||
+              res.data ||
+              [],
+
+          });
+
+        } catch (error) {
+
+          console.error(
+
+            "Error fetching sidebar users:",
+
+            error,
+          );
+
+        }
+
+      },
+
+
+
+    // =====================================================
+    // LOAD CHANNELS
+    // =====================================================
+
+    loadChannels:
+      async () => {
+
+        try {
+
+          const res =
+            await getMyChannels();
+
+          set({
+
+            channels:
+
+              res.data.payload ||
+              res.data ||
+              [],
+
+          });
+
+        } catch (error) {
+
+          console.error(
+
+            "Error fetching channels:",
+
+            error,
+          );
+
+        }
+
+      },
+
+
+
+    // =====================================================
+    // SET MESSAGES
+    // =====================================================
+
+    setMessages:
+      (messages) =>
+
+        set((state) => ({
+
+          messages:
+
+            typeof messages ===
+            "function"
+
+              ? messages(
+                  state.messages,
+                )
+
+              : messages || [],
+
+        })),
+
+
+
+    // =====================================================
+    // ADD MESSAGE
+    // =====================================================
+
+    addMessage:
+      (message) => {
+
+        if (!message?._id) {
+          return;
+        }
+
+        set((state) => {
+
+          const isDuplicate =
+            state.messages.some(
+              (msg) =>
+                msg._id ===
+                message._id,
+            );
+
+          if (isDuplicate) {
+            return state;
           }
-        : state.unreadCounts,
-    })),
 
-  /* ======================================================
-       UPDATE MESSAGE REACTION
-    ====================================================== */
+          return {
 
-  updateMessageReaction: (updatedMessage) => {
-    set((state) => ({
-      messages: state.messages.map((msg) =>
-        msg._id.toString() === updatedMessage._id.toString()
-          ? updatedMessage
-          : msg,
-      ),
-    }));
-  },
+            messages: [
 
-  /* ======================================================
-       RECEIVE MESSAGE
-    ====================================================== */
+              ...state.messages,
 
-  receiveMessage: (message) => {
-    set((state) => {
-      const isDuplicate = state.messages.some((msg) => msg._id === message._id);
+              message,
 
-      if (isDuplicate) {
-        return state;
-      }
+            ],
 
-      const activeChatId = state.selectedUser?._id;
+          };
 
-      const isChannelChat = state.selectedUser?.isChannel;
+        });
 
-      let isCurrentChatMatch = false;
+      },
 
-      let notificationId = null;
 
-      if (message.channel) {
-        const channelId = message.channel?._id || message.channel;
 
-        if (isChannelChat && activeChatId === channelId) {
-          isCurrentChatMatch = true;
-        } else {
-          notificationId = channelId;
+    // =====================================================
+    // UPDATE MESSAGE
+    // =====================================================
+
+    updateMessage:
+      (updatedMessage) => {
+
+        if (!updatedMessage?._id) {
+          return;
         }
-      } else {
-        const senderId = message.sender?._id || message.sender;
 
-        if (!isChannelChat && activeChatId === senderId) {
-          isCurrentChatMatch = true;
-        } else {
-          notificationId = senderId;
+        set((state) => ({
+
+          messages:
+            state.messages.map(
+              (msg) =>
+
+                msg._id.toString() ===
+                updatedMessage._id.toString()
+
+                  ? {
+
+                      ...msg,
+
+                      ...updatedMessage,
+
+                    }
+
+                  : msg,
+            ),
+
+        }));
+
+      },
+
+
+
+    // =====================================================
+    // THREAD REPLY
+    // =====================================================
+
+    addThreadReply:
+      (replyMessage) => {
+
+        if (!replyMessage?._id) {
+          return;
         }
-      }
 
-      if (isCurrentChatMatch) {
-        return {
-          messages: [...state.messages, message],
-        };
-      } else if (notificationId) {
-        return {
-          unreadCounts: {
-            ...state.unreadCounts,
+        set((state) => {
 
-            [notificationId]: (state.unreadCounts[notificationId] || 0) + 1,
-          },
-        };
-      }
+          const isDuplicate =
+            state.messages.some(
+              (msg) =>
+                msg._id ===
+                replyMessage._id,
+            );
 
-      return state;
-    });
+          if (isDuplicate) {
+            return state;
+          }
 
-    get().loadSidebarUsers();
+          return {
 
-    get().loadChannels();
-  },
-}));
+            messages: [
+
+              ...state.messages,
+
+              replyMessage,
+
+            ],
+
+          };
+
+        });
+
+      },
+
+
+
+    // =====================================================
+    // SELECT USER
+    // =====================================================
+
+    setSelectedUser:
+      (user) =>
+
+        set((state) => ({
+
+          selectedUser: user,
+
+          unreadCounts: user
+
+            ? {
+
+                ...state.unreadCounts,
+
+                [user._id]: 0,
+
+              }
+
+            : state.unreadCounts,
+
+        })),
+
+
+
+    // =====================================================
+    // REACTIONS
+    // =====================================================
+
+    updateMessageReaction:
+      (updatedMessage) => {
+
+        if (!updatedMessage?._id) {
+          return;
+        }
+
+        set((state) => ({
+
+          messages:
+            state.messages.map(
+              (msg) =>
+
+                msg._id.toString() ===
+                updatedMessage._id.toString()
+
+                  ? updatedMessage
+
+                  : msg,
+            ),
+
+        }));
+
+      },
+
+
+
+    // =====================================================
+    // RECEIVE MESSAGE
+    // =====================================================
+
+    receiveMessage:
+      (message) => {
+
+        if (!message?._id) {
+          return;
+        }
+
+        set((state) => {
+
+          const isDuplicate =
+            state.messages.some(
+              (msg) =>
+                msg._id ===
+                message._id,
+            );
+
+          if (isDuplicate) {
+            return state;
+          }
+
+          const activeChatId =
+            state.selectedUser?._id;
+
+          const isChannelChat =
+            state.selectedUser?.isChannel;
+
+
+
+          let isCurrentChatMatch =
+            false;
+
+          let notificationId =
+            null;
+
+
+
+          // =====================================
+          // CHANNEL MESSAGE
+          // =====================================
+
+          if (message.channel) {
+
+            const channelId =
+
+              message.channel?._id ||
+
+              message.channel;
+
+            if (
+
+              isChannelChat &&
+
+              activeChatId ===
+                channelId
+
+            ) {
+
+              isCurrentChatMatch =
+                true;
+
+            }
+
+            else {
+
+              notificationId =
+                channelId;
+
+            }
+
+          }
+
+
+
+          // =====================================
+          // DIRECT MESSAGE
+          // =====================================
+
+          else {
+
+            const senderId =
+
+              message.sender?._id ||
+
+              message.sender;
+
+            const receiverId =
+
+              message.receiver?._id ||
+
+              message.receiver;
+
+
+
+            if (
+
+              !isChannelChat &&
+
+              (
+
+                activeChatId ===
+                  senderId ||
+
+                activeChatId ===
+                  receiverId
+
+              )
+
+            ) {
+
+              isCurrentChatMatch =
+                true;
+
+            }
+
+            else {
+
+              notificationId =
+                senderId;
+
+            }
+
+          }
+
+
+
+          // =====================================
+          // ACTIVE CHAT
+          // =====================================
+
+          if (isCurrentChatMatch) {
+
+            return {
+
+              messages: [
+
+                ...state.messages,
+
+                message,
+
+              ],
+
+            };
+
+          }
+
+
+
+          // =====================================
+          // UNREAD COUNT
+          // =====================================
+
+          else if (
+            notificationId
+          ) {
+
+            return {
+
+              unreadCounts: {
+
+                ...state.unreadCounts,
+
+                [notificationId]:
+
+                  (
+                    state.unreadCounts[
+                      notificationId
+                    ] || 0
+                  ) + 1,
+
+              },
+
+            };
+
+          }
+
+          return state;
+
+        });
+
+      },
+
+  }));
