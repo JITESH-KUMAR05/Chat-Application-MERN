@@ -65,13 +65,13 @@ export default function ChatArea() {
           res = await getMessages(selectedUser._id);
           if (markMessagesAsSeenApi) {
             await markMessagesAsSeenApi(selectedUser._id).catch((err) =>
-              console.log("Mark seen error:", err)
+              console.log(err)
             );
           }
         }
         setMessages(res.data.payload);
       } catch (err) {
-        console.error("Error loading chat:", err);
+        console.error(err);
       }
     };
 
@@ -102,23 +102,34 @@ export default function ChatArea() {
   const sendMessageHandler = async (data) => {
     try {
       let res;
-      const formData = new FormData();
-      formData.append("content", data.message || "");
-
-      if (selectedUser.isChannel) {
-        formData.append("channel", selectedUser._id);
-      } else {
-        formData.append("receiver", selectedUser._id);
-      }
-      if (file) formData.append("file", file);
 
       if (replyingToMessage) {
-        res = await sendThreadReplyApi(replyingToMessage._id, formData);
+        const payload = {
+          content: data.message || "",
+        };
+
+        if (selectedUser.isChannel) {
+          payload.channel = selectedUser._id;
+        } else {
+          payload.receiver = selectedUser._id;
+        }
+
+        res = await sendThreadReplyApi(replyingToMessage._id, payload);
       } else {
+        const formData = new FormData();
+        formData.append("content", data.message || "");
+
+        if (selectedUser.isChannel) {
+          formData.append("channel", selectedUser._id);
+        } else {
+          formData.append("receiver", selectedUser._id);
+        }
+        if (file) formData.append("file", file);
+
         res = await sendMessage(formData);
       }
 
-      if (res.data && res.data.payload) {
+      if (res?.data?.payload) {
         const newMessage = res.data.payload;
         if (replyingToMessage) newMessage.parentMessage = replyingToMessage;
         addMessage(newMessage);
@@ -129,7 +140,7 @@ export default function ChatArea() {
       setShowPicker(false);
       setReplyingToMessage(null);
     } catch (err) {
-      console.error("Error sending message:", err);
+      console.error(err);
     }
   };
 
@@ -156,7 +167,7 @@ export default function ChatArea() {
 
       closePeerConnection();
     } catch (err) {
-      console.error("Error cleaning up tracks:", err);
+      console.error(err);
     } finally {
       useCallStore.getState().setCallAccepted(false);
       useCallStore.getState().resetCall();
@@ -199,7 +210,7 @@ export default function ChatArea() {
 
       window.playOutgoingSound?.();
     } catch (err) {
-      console.log("Error starting call:", err);
+      console.log(err);
     }
   };
 

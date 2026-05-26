@@ -95,7 +95,10 @@ export function ThreadReplies({ parentMessage, parentMessageId }) {
     const handleNewReply = (newMessage) => {
       const incomingParentId = newMessage.parentMessage?._id || newMessage.parentMessage;
       if (incomingParentId === parentMessageId) {
-        setReplies((prev) => [...prev, newMessage]);
+        setReplies((prev) => {
+          if (prev.find(reply => reply._id === newMessage._id)) return prev;
+          return [...prev, newMessage];
+        });
       }
     };
 
