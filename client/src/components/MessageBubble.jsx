@@ -10,10 +10,6 @@ export default function MessageBubble({ message, currentUser }) {
 
   const [isEditing, setIsEditing]       = useState(false);
   const [editedText, setEditedText]     = useState(message.content || "");
-  const [localContent, setLocalContent] = useState(message.content || "");
-  const [localIsEdited, setLocalIsEdited] = useState(message.isEdited || false);
-  const [localEditedAt, setLocalEditedAt] = useState(message.editedAt || null);
-  const [localReactions, setLocalReactions] = useState(message.reactions || []);
 
   const updateMessage = useMessageStore((state) => state.updateMessage);
 
@@ -148,7 +144,7 @@ export default function MessageBubble({ message, currentUser }) {
               />
               <div className="flex justify-end gap-2">
                 <button
-                  onClick={() => { setEditedText(localContent); setIsEditing(false); }}
+                  onClick={() => { setEditedText(message.content); setIsEditing(false); }}
                   className="px-3 py-1 bg-gray-500 hover:bg-gray-400 rounded-lg text-sm"
                 >
                   Cancel
@@ -158,10 +154,7 @@ export default function MessageBubble({ message, currentUser }) {
                     try {
                       const res = await editMessageApi(message._id, { content: editedText });
                       const updated = res.data.payload;
-                      setLocalContent(updated.content);
-                      setLocalIsEdited(true);
-                      setLocalEditedAt(updated.editedAt);
-                      updateMessage({ _id: message._id, content: updated.content, isEdited: true, editedAt: updated.editedAt });
+                      updateMessage(updated);
                       setIsEditing(false);
                     } catch (err) { console.log(err); }
                   }}
@@ -174,8 +167,8 @@ export default function MessageBubble({ message, currentUser }) {
           ) : (
             <>
               {/* ── TEXT ── */}
-              {localContent && !youtubeVideoId && !isWebsiteLink && !message.fileUrl && (
-                <p className="break-words whitespace-pre-wrap">{localContent}</p>
+              {message.content && !youtubeVideoId && !isWebsiteLink && !message.fileUrl && (
+                <p className="break-words whitespace-pre-wrap">{message.content}</p>
               )}
 
               {/* ── WEBSITE LINK ── */}
@@ -243,8 +236,8 @@ export default function MessageBubble({ message, currentUser }) {
               )}
 
               {/* ── REACTIONS ── */}
-              {localReactions.length > 0 && (
-                <MessageReactions reactions={localReactions} />
+              {message.reactions && message.reactions.length > 0 && (
+                <MessageReactions reactions={message.reactions} />
               )}
 
               {/* ── THREAD REPLIES (replies TO this message) ── */}
@@ -256,11 +249,11 @@ export default function MessageBubble({ message, currentUser }) {
               {/* ── TIME + EDITED + STATUS ── */}
               <div className="flex items-center justify-end gap-1 mt-2 text-[11px] opacity-70">
                 <span>{time}</span>
-                {localIsEdited && (
+                {message.isEdited && (
                   <span className="italic text-[10px]">
                     · edited{" "}
-                    {localEditedAt
-                      ? new Date(localEditedAt).toLocaleTimeString([], {
+                    {message.editedAt
+                      ? new Date(message.editedAt).toLocaleTimeString([], {
                           hour: "2-digit", minute: "2-digit",
                         })
                       : ""}
@@ -277,11 +270,11 @@ export default function MessageBubble({ message, currentUser }) {
           <MessageActions
             isOwnMessage={isOwnMessage}
             message={message}
-            onEdit={() => setIsEditing(true)}
+            onEdit={() => { setEditedText(message.content || ""); setIsEditing(true); }}
             onReact={async (emoji) => {
               try {
                 const res = await reactToMessageApi(message._id, { emoji });
-                setLocalReactions(res.data.payload.reactions || []);
+                updateMessage(res.data.payload);
               } catch (err) {
                 console.log(err);
               }

@@ -135,6 +135,12 @@ const messageSchema = new Schema(
     previewImage:       { type: String, default: "" },
     previewTitle:       { type: String, default: "" },
     previewDescription: { type: String, default: "" },
+
+    clientMessageId: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
   },
   {
     timestamps: true,

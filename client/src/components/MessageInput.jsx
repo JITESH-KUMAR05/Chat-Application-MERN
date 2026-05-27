@@ -48,15 +48,18 @@ const MessageInput = ({ senderId, receiverId, refreshMessages }) => {
 
   const handleSend = async () => {
     if (!text && !file) return;
+    if (loading) return;
 
     try {
       setLoading(true);
+      const clientMessageId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       const formData = new FormData();
 
       formData.append("senderId", senderId);
       formData.append("receiverId", receiverId);
       formData.append("content", text);
       formData.append("messageType", detectMessageType());
+      formData.append("clientMessageId", clientMessageId);
 
       if (replyingToMessage) {
         formData.append("parentMessageId", replyingToMessage._id);

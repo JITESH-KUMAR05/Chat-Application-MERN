@@ -100,8 +100,15 @@ export default function Signup() {
               placeholder="Username (optional)"
               className="w-full p-3 rounded-lg bg-white/90 outline-none"
               {...register("username", {
+                pattern: {
+                  value: /^[a-zA-Z][a-zA-Z0-9_]*$/,
+                  message: "Username must start with an alphabet letter and contain only letters, numbers, and underscores",
+                },
                 validate: async (value) => {
                   if (!value) return true;
+                  if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(value)) {
+                    return "Username must start with an alphabet letter and contain only letters, numbers, and underscores";
+                  }
                   try {
                     const res = await api.get(
                       `/user-api/check-username?username=${value}`,
@@ -127,7 +134,13 @@ export default function Signup() {
             <input
               placeholder="Email"
               className="w-full p-3 rounded-lg bg-white/90 outline-none"
-              {...register("email", { required: "Enter Email" })}
+              {...register("email", {
+                required: "Enter Email",
+                pattern: {
+                  value: /^[a-zA-Z][a-zA-Z0-9._%+-]*@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+                  message: "Invalid email format. The email local part must start with a letter and have a valid domain.",
+                },
+              })}
             />
 
             {errors.email && (

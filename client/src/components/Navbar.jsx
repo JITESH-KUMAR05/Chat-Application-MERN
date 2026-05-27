@@ -11,15 +11,15 @@ import { useAuthStore } from "../store/useAuthStore";
 
 export default function Navbar() {
   const setSelectedUser = useMessageStore((state) => state.setSelectedUser);
+  const addSidebarUser = useMessageStore((state) => state.addSidebarUser);
+  const isSidebarOpen = useMessageStore((state) => state.isSidebarOpen);
+  const toggleSidebar = useMessageStore((state) => state.toggleSidebar);
 
   const currentUser = useAuthStore((state) => state.user);
-
   const logout = useAuthStore((state) => state.logout);
 
   const [query, setQuery] = useState("");
-
   const [users, setUsers] = useState([]);
-
   const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
@@ -27,9 +27,7 @@ export default function Navbar() {
   const handleLogout = async () => {
     try {
       await api.get("/user-api/logout");
-
       logout();
-
       navigate("/login");
     } catch (err) {
       console.error("Logout failed:", err);
@@ -38,12 +36,10 @@ export default function Navbar() {
 
   const handleSearch = async (e) => {
     const text = e.target.value;
-
     setQuery(text);
 
     if (text.trim() === "") {
       setUsers([]);
-
       return;
     }
 
@@ -53,11 +49,9 @@ export default function Navbar() {
       let res = await api.get(`/user-api/user?search=${text}`, {
         withCredentials: true,
       });
-
       setUsers(res.data);
     } catch (err) {
       console.error("Search failed:", err);
-
       setUsers([]);
     } finally {
       setIsLoading(false);
@@ -66,29 +60,38 @@ export default function Navbar() {
 
   const clearSearch = () => {
     setQuery("");
-
     setUsers([]);
   };
 
   return (
-    <div className="flex items-center justify-between px-6 py-3 bg-[#020617] border-b border-blue-900 relative">
-      {/* LEFT */}
-      <div
-        className="flex items-center gap-3 cursor-pointer"
-        onClick={() => navigate("/chat/dashboard")}
-      >
-        <img
-          src={logo}
-          alt="Spark Logo"
-          className="w-10 h-10 rounded-full"
-        />
-
-        <span className="text-white font-semibold text-lg">
-          Spark
-        </span>
+    <div className="flex items-center justify-between px-6 py-3 bg-[#020617] border-b border-blue-900 relative shrink-0">
+      <div className="flex items-center gap-4">
+        {!isSidebarOpen && (
+          <button
+            onClick={toggleSidebar}
+            className="text-slate-400 hover:text-white transition-colors cursor-pointer mr-1"
+            title="Expand Sidebar"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 animate-fade-in">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+          </button>
+        )}
+        <div
+          className="flex items-center gap-3 cursor-pointer"
+          onClick={() => navigate("/chat/dashboard")}
+        >
+          <img
+            src={logo}
+            alt="Spark Logo"
+            className="w-10 h-10 rounded-full"
+          />
+          <span className="text-white font-semibold text-lg">
+            Spark
+          </span>
+        </div>
       </div>
 
-      {/* SEARCH */}
       <div className="relative">
         <div className="relative flex items-center">
           <input
@@ -126,11 +129,10 @@ export default function Navbar() {
                   className="px-4 py-3 cursor-pointer hover:bg-slate-800 flex items-center gap-3"
                   onClick={() => {
                     setSelectedUser(user);
-
+                    
                     navigate(`/chat/${user._id}`, {
                       state: user,
                     });
-
                     clearSearch();
                   }}
                 >
@@ -139,12 +141,10 @@ export default function Navbar() {
                     alt={user.firstName}
                     className="w-8 h-8 rounded-full object-cover"
                   />
-
                   <div className="flex flex-col">
                     <span className="text-white text-sm">
                       {user.firstName} {user.lastName}
                     </span>
-
                     <span className="text-gray-400 text-xs">
                       {user.email}
                     </span>
@@ -160,13 +160,11 @@ export default function Navbar() {
         )}
       </div>
 
-      {/* RIGHT */}
       <div className="flex items-center gap-4">
         <div className="text-right">
           <p className="text-white text-sm font-semibold">
             {currentUser?.firstName} {currentUser?.lastName}
           </p>
-
           <p className="text-gray-400 text-xs">
             {currentUser?.email}
           </p>

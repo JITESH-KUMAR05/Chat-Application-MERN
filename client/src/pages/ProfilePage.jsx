@@ -80,7 +80,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="flex h-full bg-[#020617] text-white">
+    <div className="flex h-[100vh] bg-[#020617] text-white">
       {/* LEFT SIDEBAR */}
       <div className="w-[260px] bg-slate-900 flex flex-col items-center p-6 border-r border-blue-900">
         {/* PROFILE IMAGE */}

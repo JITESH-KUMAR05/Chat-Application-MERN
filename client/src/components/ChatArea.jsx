@@ -37,6 +37,7 @@ export default function ChatArea() {
   const setReplyingToMessage = useMessageStore((state) => state.setReplyingToMessage);
   const setMessages = useMessageStore((state) => state.setMessages);
   const addMessage = useMessageStore((state) => state.addMessage);
+  const addSidebarUser = useMessageStore((state) => state.addSidebarUser);
 
   const currentUser = useAuthStore((state) => state.user);
 
@@ -104,17 +105,18 @@ export default function ChatArea() {
       let res;
 
       if (replyingToMessage) {
-        const payload = {
-          content: data.message || "",
-        };
+        const formData = new FormData();
+        formData.append("content", data.message || "");
 
         if (selectedUser.isChannel) {
-          payload.channel = selectedUser._id;
+          formData.append("channel", selectedUser._id);
         } else {
-          payload.receiver = selectedUser._id;
+          formData.append("receiver", selectedUser._id);
         }
+        
+        if (file) formData.append("file", file);
 
-        res = await sendThreadReplyApi(replyingToMessage._id, payload);
+        res = await sendThreadReplyApi(replyingToMessage._id, formData);
       } else {
         const formData = new FormData();
         formData.append("content", data.message || "");
@@ -124,6 +126,7 @@ export default function ChatArea() {
         } else {
           formData.append("receiver", selectedUser._id);
         }
+        
         if (file) formData.append("file", file);
 
         res = await sendMessage(formData);
@@ -132,7 +135,12 @@ export default function ChatArea() {
       if (res?.data?.payload) {
         const newMessage = res.data.payload;
         if (replyingToMessage) newMessage.parentMessage = replyingToMessage;
+        
         addMessage(newMessage);
+
+        if (!selectedUser.isChannel) {
+          addSidebarUser(selectedUser);
+        }
       }
 
       reset();

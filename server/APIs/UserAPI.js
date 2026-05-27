@@ -9,10 +9,31 @@ import mongoose from "mongoose";
 
 export const userRouter = express.Router();
 
+userRouter.get("/check-auth", verifyToken, async (req, res) => {
+  try {
+    const user = await UserModel.findById(req.user.userId).select("-password");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    return res.status(200).json({ payload: user });
+  } catch (error) {
+    console.error("check-auth error:", error);
+    return res.status(500).json({ error: "Server error checking authentication" });
+  }
+});
+
 userRouter.get("/check-username", async (req, res) => {
   try {
     const { username } = req.query;
     if (!username) return res.status(400).json({ available: false });
+
+    const usernameRegex = /^[a-zA-Z][a-zA-Z0-9_]*$/;
+    if (!usernameRegex.test(username)) {
+      return res.json({
+        available: false,
+        message: "Username must start with an alphabet letter and contain only letters, numbers, and underscores.",
+      });
+    }
 
     const existing = await UserModel.findOne({
       username: username.toLowerCase(),
@@ -35,8 +56,25 @@ userRouter.post("/register", async (req, res) => {
 
     let userObj = req.body;
 
-    if (!userObj.username || userObj.username.trim() === "") {
+    if (userObj.username && userObj.username.trim() !== "") {
+      const usernameRegex = /^[a-zA-Z][a-zA-Z0-9_]*$/;
+      if (!usernameRegex.test(userObj.username)) {
+        return res.status(400).json({
+          error: "Username must start with an alphabet letter and contain only letters, numbers, and underscores.",
+        });
+      }
+    } else {
       delete userObj.username;
+    }
+
+    if (!userObj.email) {
+      return res.status(400).json({ error: "Email is required." });
+    }
+    const emailRegex = /^[a-zA-Z][a-zA-Z0-9._%+-]*@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(userObj.email)) {
+      return res.status(400).json({
+        error: "Invalid email format. The email local part must start with a letter and have a valid domain.",
+      });
     }
 
     let userDoc = new UserModel(userObj);

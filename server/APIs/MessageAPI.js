@@ -15,10 +15,21 @@ messageRoute.post(
   verifyToken,
   upload.single("file"),
   async (req, res) => {
+    const { content, receiver, channel, parentMessage, clientMessageId } = req.body;
     try {
-      const { content, receiver, channel, parentMessage } = req.body;
-
       const sender = req.user.userId;
+
+      if (clientMessageId) {
+        const existing = await MessageModel.findOne({ clientMessageId })
+          .populate("sender", "firstName lastName email profilePic")
+          .populate("parentMessage");
+        if (existing) {
+          return res.status(200).json({
+            message: "Message Sent",
+            payload: existing,
+          });
+        }
+      }
 
       let fileUrl = "";
       let fileName = "";
@@ -50,6 +61,7 @@ messageRoute.post(
         fileName,
         fileType,
         parentMessage: parentMessage || null,
+        ...(clientMessageId && { clientMessageId }),
         ...(receiver && { receiver }),
         ...(channel && { channel }),
       });
@@ -69,6 +81,23 @@ messageRoute.post(
         payload: populatedNewMessage,
       });
     } catch (err) {
+      if (err.code === 11000 || (err.writeErrors && err.writeErrors.some(e => e.code === 11000))) {
+        if (clientMessageId) {
+          try {
+            const existing = await MessageModel.findOne({ clientMessageId })
+              .populate("sender", "firstName lastName email profilePic")
+              .populate("parentMessage");
+            if (existing) {
+              return res.status(200).json({
+                message: "Message Sent",
+                payload: existing,
+              });
+            }
+          } catch (findErr) {
+            console.log("Error finding existing message:", findErr);
+          }
+        }
+      }
       console.log("Error details:", err);
       res.status(500).json({
         error: "Server Error",

@@ -40,20 +40,25 @@ export const editMessage = async (req, res) => {
 
     await message.save();
 
+    const populated = await MessageModel.findById(message._id)
+      .populate("sender", "firstName lastName email profilePic")
+      .populate("receiver", "firstName lastName email profilePic")
+      .populate("parentMessage");
+
     const io = req.app.get("socketio");
 
     if (message.channel) {
-      io.to(message.channel.toString()).emit("message edited", message);
+      io.to(message.channel.toString()).emit("message edited", populated);
     } else {
       io.to(message.receiver.toString())
         .to(message.sender.toString())
-        .emit("message edited", message);
+        .emit("message edited", populated);
     }
 
     res.status(200).json({
       message: "Message edited successfully",
 
-      payload: message,
+      payload: populated,
     });
   } catch (err) {
     console.log(err);
@@ -69,12 +74,22 @@ export const editMessage = async (req, res) => {
 ====================================================== */
 
 export const sendThreadReply = async (req, res) => {
+  const { parentMessageId } = req.params;
+  const { content, clientMessageId } = req.body;
   try {
-    const { parentMessageId } = req.params;
-
-    const { content } = req.body;
-
     const sender = req.user.userId;
+
+    if (clientMessageId) {
+      const existing = await MessageModel.findOne({ clientMessageId })
+        .populate("sender", "firstName lastName email profilePic")
+        .populate("parentMessage");
+      if (existing) {
+        return res.status(200).json({
+          message: "Thread reply sent",
+          payload: existing,
+        });
+      }
+    }
 
     if (!content || !content.trim()) {
       return res.status(400).json({
@@ -122,6 +137,7 @@ export const sendThreadReply = async (req, res) => {
       content,
 
       parentMessage: parentMessageId,
+      ...(clientMessageId && { clientMessageId }),
     });
 
     await newReply.save();
@@ -146,6 +162,23 @@ export const sendThreadReply = async (req, res) => {
       payload: populatedReply,
     });
   } catch (err) {
+    if (err.code === 11000 || (err.writeErrors && err.writeErrors.some(e => e.code === 11000))) {
+      if (clientMessageId) {
+        try {
+          const existing = await MessageModel.findOne({ clientMessageId })
+            .populate("sender", "firstName lastName email profilePic")
+            .populate("parentMessage");
+          if (existing) {
+            return res.status(200).json({
+              message: "Thread reply sent",
+              payload: existing,
+            });
+          }
+        } catch (findErr) {
+          console.log("Error finding existing thread reply:", findErr);
+        }
+      }
+    }
     console.log(err);
 
     res.status(500).json({

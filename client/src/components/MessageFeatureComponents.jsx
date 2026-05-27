@@ -57,7 +57,7 @@ export function MessageActions({ isOwnMessage, onEdit, message, onReact }) {
             ))}
           </div>
 
-          {isOwnMessage && (
+          {isOwnMessage && !message.fileUrl && !message.fileType && (
             <button
               onClick={(e) => {
                 e.stopPropagation();

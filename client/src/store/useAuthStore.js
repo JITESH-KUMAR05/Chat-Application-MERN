@@ -9,6 +9,25 @@ export const useAuthStore = create(
       loading: false,
       isAuthenticated: false,
       error: null,
+      isCheckingAuth: true,
+
+      checkAuth: async () => {
+        try {
+          let res = await api.get("/user-api/check-auth");
+          set({
+            user: res.data.payload,
+            isAuthenticated: true,
+            isCheckingAuth: false,
+          });
+        } catch (err) {
+          console.log("checkAuth error:", err);
+          set({
+            user: null,
+            isAuthenticated: false,
+            isCheckingAuth: false,
+          });
+        }
+      },
 
       login: async (userCredObj) => {
         try {
@@ -112,6 +131,10 @@ export const useAuthStore = create(
     }),
     {
       name: "auth-storage",
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+      }),
     },
   ),
 );

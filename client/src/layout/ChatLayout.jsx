@@ -31,6 +31,9 @@ export default function ChatLayout() {
   const markStoreMessagesAsSeen =
     useMessageStore((state) => state.markStoreMessagesAsSeen);
 
+  const updateMessage =
+    useMessageStore((state) => state.updateMessage);
+
   const {
     incomingCall,
     setIncomingCall,
@@ -113,6 +116,13 @@ export default function ChatLayout() {
       socket.off("message Received");
       socket.on("message Received", handleMessageReceived);
 
+      const handleMessageEdited = (updatedMessage) => {
+        updateMessage(updatedMessage);
+      };
+
+      socket.off("message edited");
+      socket.on("message edited", handleMessageEdited);
+
       // ------------------------------------------------
       // CALL LOG MESSAGE — emitted by server after a call
       // ends/is cancelled/rejected so the call bubble
@@ -143,6 +153,7 @@ export default function ChatLayout() {
 
       return () => {
         socket.off("message Received", handleMessageReceived);
+        socket.off("message edited", handleMessageEdited);
         socket.off("call-message", handleCallMessage);
         socket.off("messagesSeen", handleMessagesSeen);
       };

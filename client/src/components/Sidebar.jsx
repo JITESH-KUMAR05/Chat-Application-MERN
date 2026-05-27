@@ -19,6 +19,9 @@ export default function Sidebar() {
   const setSelectedUser = useMessageStore((state) => state.setSelectedUser);
   const currentUser = useAuthStore((state) => state.user);
 
+  const isSidebarOpen = useMessageStore((state) => state.isSidebarOpen);
+  const toggleSidebar = useMessageStore((state) => state.toggleSidebar);
+
   useEffect(() => {
     if (currentUser) {
       loadSidebarUsers();
@@ -38,12 +41,22 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="w-[260px] bg-[#020617] text-white flex flex-col">
+    <div className={`bg-[#020617] text-white flex flex-col transition-all duration-300 ease-in-out shrink-0 ${
+      isSidebarOpen ? "w-[260px] opacity-100" : "w-0 opacity-0 overflow-hidden pointer-events-none"
+    }`}>
       {/* TITLE */}
 
-      <div className="px-5 py-4 font-semibold text-lg border-b border-blue-900 flex justify-between items-center">
+      <div className="px-5 py-4 font-semibold text-lg border-b border-blue-900 flex justify-between items-center shrink-0">
         <span>Chats</span>
-        {/* We will add a Create Channel button later! */}
+        <button
+          onClick={toggleSidebar}
+          className="text-slate-400 hover:text-white transition-colors cursor-pointer"
+          title="Collapse Sidebar"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+          </svg>
+        </button>
       </div>
 
       {/* CHAT LIST */}

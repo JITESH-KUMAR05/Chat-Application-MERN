@@ -17,12 +17,27 @@ const userSchema = new Schema(
       lowercase: true,
       trim: true,
       sparse: true,
+      validate: {
+        validator: function (v) {
+          if (!v) return true;
+          return /^[a-zA-Z][a-zA-Z0-9_]*$/.test(v);
+        },
+        message: (props) =>
+          `${props.value} is not a valid username! It must start with an alphabet letter and contain only letters, numbers, and underscores.`,
+      },
     },
 
     email: {
       type: String,
       required: true,
       unique: true,
+      validate: {
+        validator: function (v) {
+          return /^[a-zA-Z][a-zA-Z0-9._%+-]*@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(v);
+        },
+        message: (props) =>
+          `${props.value} is not a valid email address! The local part before @ must start with an alphabet letter.`,
+      },
     },
 
     password: {

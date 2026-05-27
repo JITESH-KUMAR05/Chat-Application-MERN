@@ -20,6 +20,22 @@ export const useMessageStore =
 
     replyingToMessage: null,
 
+    isSidebarOpen: true,
+
+    
+    toggleSidebar:
+      () =>
+        set((state) => ({
+          isSidebarOpen: !state.isSidebarOpen,
+        })),
+
+    addSidebarUser: (newUser) => set((state) => {
+    const userExists = state.sidebarUsers?.find((u) => u._id === newUser._id);
+    if (userExists) {
+      return state; 
+    }
+    return { sidebarUsers: [newUser, ...(state.sidebarUsers || [])] };
+    }),
 
 
     // =====================================================
@@ -77,10 +93,11 @@ export const useMessageStore =
           set({
 
             sidebarUsers:
-
-              res.data.payload ||
-              res.data ||
-              [],
+              Array.isArray(res?.data?.payload)
+                ? res.data.payload
+                : Array.isArray(res?.data)
+                  ? res.data
+                  : [],
 
           });
 
@@ -114,10 +131,11 @@ export const useMessageStore =
           set({
 
             channels:
-
-              res.data.payload ||
-              res.data ||
-              [],
+              Array.isArray(res?.data?.payload)
+                ? res.data.payload
+                : Array.isArray(res?.data)
+                  ? res.data
+                  : [],
 
           });
 

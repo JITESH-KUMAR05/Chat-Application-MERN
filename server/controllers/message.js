@@ -2,20 +2,22 @@ import { MessageModel } from "../Models/MessageModel.js";
 
 export const sendMessage =
   async (req, res) => {
+    const {
+      sender,
+      receiver,
+      content,
+      clientMessageId,
+    } = req.body;
 
     try {
-
-      const {
-
-        sender,
-
-        receiver,
-
-        content,
-
-      } = req.body;
-
-
+      if (clientMessageId) {
+        const existing = await MessageModel.findOne({ clientMessageId })
+          .populate("sender", "firstName lastName profilePic")
+          .populate("receiver", "firstName lastName profilePic");
+        if (existing) {
+          return res.status(201).json(existing);
+        }
+      }
 
       // =================================================
       // FILE DETAILS
@@ -68,7 +70,7 @@ export const sendMessage =
             req.file
               ? "file"
               : "text",
-
+          ...(clientMessageId && { clientMessageId }),
         });
 
 
@@ -133,7 +135,20 @@ export const sendMessage =
       );
 
     } catch (error) {
-
+      if (error.code === 11000 || (error.writeErrors && error.writeErrors.some(e => e.code === 11000))) {
+        if (clientMessageId) {
+          try {
+            const existing = await MessageModel.findOne({ clientMessageId })
+              .populate("sender", "firstName lastName profilePic")
+              .populate("receiver", "firstName lastName profilePic");
+            if (existing) {
+              return res.status(201).json(existing);
+            }
+          } catch (findErr) {
+            console.log("Error finding existing message:", findErr);
+          }
+        }
+      }
       console.log(error);
 
       res.status(500).json({
