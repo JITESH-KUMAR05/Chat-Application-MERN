@@ -105,32 +105,28 @@ export default function ChatArea() {
       let res;
 
       if (replyingToMessage) {
-        const formData = new FormData();
-        formData.append("content", data.message || "");
+        const payload = {
+          content: data.message || "",
+        };
 
         if (selectedUser.isChannel) {
-          formData.append("channel", selectedUser._id);
+          payload.channel = selectedUser._id;
         } else {
-          formData.append("receiver", selectedUser._id);
+          payload.receiver = selectedUser._id;
         }
-        
-        if (file) formData.append("file", file);
 
-        res = await sendThreadReplyApi(replyingToMessage._id, formData);
+        res = await sendThreadReplyApi(replyingToMessage._id, payload);
+        
       } else {
         const formData = new FormData();
         formData.append("content", data.message || "");
-
-        if (selectedUser.isChannel) {
-          formData.append("channel", selectedUser._id);
-        } else {
-          formData.append("receiver", selectedUser._id);
-        }
-        
+        if (selectedUser.isChannel) formData.append("channel", selectedUser._id);
+        else formData.append("receiver", selectedUser._id);
         if (file) formData.append("file", file);
 
         res = await sendMessage(formData);
       }
+
 
       if (res?.data?.payload) {
         const newMessage = res.data.payload;

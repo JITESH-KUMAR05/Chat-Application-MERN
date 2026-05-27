@@ -266,126 +266,70 @@ export const markMessagesAsSeen = async (req, res) => {
 ====================================================== */
 
 export const reactToMessage = async (req, res) => {
-
   try {
-
     const { messageId } = req.params;
-
     const { emoji } = req.body;
-
     const userId = req.user.userId;
 
     if (!emoji) {
-
-      return res.status(400).json({
-        message: "Emoji required",
-      });
-
+      return res.status(400).json({ message: "Emoji required" });
     }
 
-    const message =
-      await MessageModel.findById(
-        messageId
-      );
+    const message = await MessageModel.findById(messageId);
 
     if (!message) {
-
-      return res.status(404).json({
-        message: "Message not found",
-      });
-
+      return res.status(404).json({ message: "Message not found" });
     }
 
     if (!message.reactions) {
       message.reactions = [];
     }
 
-    const existingReaction =
-      message.reactions.find(
-        (reaction) =>
-          reaction.emoji === emoji
+    const existingReactionIndex = message.reactions.findIndex(
+      (reaction) => reaction.emoji === emoji
+    );
+
+    if (existingReactionIndex !== -1) {
+      const existingReaction = message.reactions[existingReactionIndex];
+      const userIndex = existingReaction.users.findIndex(
+        (id) => id.toString() === userId.toString()
       );
 
-    if (existingReaction) {
-
-      const alreadyReacted =
-        existingReaction.users.some(
-          (id) =>
-            id.toString() ===
-            userId.toString()
-        );
-
-      if (!alreadyReacted) {
-
-        existingReaction.users.push(
-          userId
-        );
-
+      if (userIndex !== -1) {
+        existingReaction.users.splice(userIndex, 1);
+        if (existingReaction.users.length === 0) {
+          message.reactions.splice(existingReactionIndex, 1);
+        }
+      } else {
+        existingReaction.users.push(userId);
       }
-
     } else {
-
       message.reactions.push({
         emoji,
         users: [userId],
       });
-
     }
 
     await message.save();
 
-    const updatedMessage =
-      await MessageModel.findById(
-        messageId
-      )
-      .populate(
-        "sender",
-        "firstName lastName email profilePic"
-      );
+    const updatedMessage = await MessageModel.findById(messageId).populate(
+      "sender",
+      "firstName lastName email profilePic"
+    );
 
-    const io =
-      req.app.get("socketio");
+    const io = req.app.get("socketio");
 
     if (updatedMessage.channel) {
-
-      io.to(
-        updatedMessage.channel.toString()
-      ).emit(
-        "reactionUpdated",
-        updatedMessage
-      );
-
+      io.to(updatedMessage.channel.toString()).emit("reactionUpdated", updatedMessage);
     } else {
-
-      io.to(
-        updatedMessage.receiver.toString()
-      )
-      .to(
-        updatedMessage.sender.toString()
-      )
-      .emit(
-        "reactionUpdated",
-        updatedMessage
-      );
-
+      io.to(updatedMessage.receiver.toString())
+        .to(updatedMessage.sender.toString())
+        .emit("reactionUpdated", updatedMessage);
     }
 
-    res.status(200).json({
-      message:
-        "Reaction added successfully",
-
-      payload: updatedMessage,
-    });
-
+    res.status(200).json({ payload: updatedMessage });
   } catch (err) {
-
-    console.log(err);
-
-    res.status(500).json({
-      message: "Server Error",
-    });
-
+    console.error(err);
+    res.status(500).json({ message: "Server Error" });
   }
-
 };
-

@@ -157,17 +157,34 @@ export function ThreadReplies({ parentMessage, parentMessageId }) {
   );
 }
 
-export function MessageReactions({ reactions }) {
+export function MessageReactions({ reactions, currentUser, onReact }) {
   if (!reactions || reactions.length === 0) return null;
 
   return (
     <div className="flex gap-1 flex-wrap mt-1">
-      {reactions.map((reaction, index) => (
-        <div key={index} className="bg-black/40 px-2 py-0.5 rounded-full text-xs flex items-center gap-1 border border-slate-700/50">
-          <span>{reaction.emoji}</span>
-          <span className="text-slate-300">{reaction.users?.length || 1}</span>
-        </div>
-      ))}
+      {reactions.map((reaction, index) => {
+        const hasReacted = reaction.users?.some(
+          (user) => user === currentUser?._id || user?._id === currentUser?._id
+        );
+
+        return (
+          <button
+            key={index}
+            onClick={(e) => {
+              e.stopPropagation();
+              onReact(reaction.emoji);
+            }}
+            className={`px-2 py-0.5 rounded-full text-xs flex items-center gap-1 border transition-colors cursor-pointer ${
+              hasReacted
+                ? "bg-blue-600/30 border-blue-500 text-blue-200 hover:bg-blue-600/50"
+                : "bg-black/40 border-slate-700/50 text-slate-300 hover:bg-slate-800"
+            }`}
+          >
+            <span>{reaction.emoji}</span>
+            <span className="font-medium">{reaction.users?.length || 1}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }

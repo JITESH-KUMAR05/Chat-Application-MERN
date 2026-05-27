@@ -5,11 +5,10 @@ import { editMessageApi, reactToMessageApi } from "../services/messageFeaturesAp
 import { MessageActions, ThreadReplies, MessageReactions } from "./MessageFeatureComponents";
 
 export default function MessageBubble({ message, currentUser }) {
-
   const isOwnMessage = message.sender?._id === currentUser?._id;
 
-  const [isEditing, setIsEditing]       = useState(false);
-  const [editedText, setEditedText]     = useState(message.content || "");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedText, setEditedText] = useState(message.content || "");
 
   const updateMessage = useMessageStore((state) => state.updateMessage);
 
@@ -18,11 +17,23 @@ export default function MessageBubble({ message, currentUser }) {
     minute: "2-digit",
   });
 
-  // =====================================================
-  // YOUTUBE DETECTION
-  // =====================================================
+  // 🚨 Replace your handleReact function with this exact code:
+  const handleReact = async (emojiString) => {
+    try {
+      
+      const payload = { 
+        emoji: emojiString 
+      };
+
+      await reactToMessageApi(message._id, payload);
+      
+    } catch (err) {
+      console.error("Failed to react to message:", err);
+    }
+  };
+
   const youtubeRegex = /(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/\S+/g;
-  const youtubeLink  = message.content?.match(youtubeRegex)?.[0];
+  const youtubeLink = message.content?.match(youtubeRegex)?.[0];
   let youtubeVideoId = null;
   try {
     youtubeVideoId = youtubeLink
@@ -35,15 +46,8 @@ export default function MessageBubble({ message, currentUser }) {
   } catch { youtubeVideoId = null; }
 
   const isWebsiteLink = message.content?.startsWith("http") && !youtubeVideoId;
-
-  // =====================================================
-  // IS THIS A THREAD REPLY? Show parent context at top
-  // =====================================================
   const parentMsg = message.parentMessage || null;
 
-  // =====================================================
-  // STATUS ICON
-  // =====================================================
   const StatusIcon = () => {
     if (!isOwnMessage) return null;
     if (message.status === "seen")
@@ -53,9 +57,6 @@ export default function MessageBubble({ message, currentUser }) {
     return <Check size={14} className="text-slate-400 flex-shrink-0" />;
   };
 
-  // =====================================================
-  // CALL LOG
-  // =====================================================
   if (message.messageType === "call") {
     return (
       <div className={`flex mb-4 ${isOwnMessage ? "justify-end" : "justify-start"}`}>
@@ -83,33 +84,23 @@ export default function MessageBubble({ message, currentUser }) {
     );
   }
 
-  // =====================================================
-  // REGULAR MESSAGE
-  // =====================================================
   return (
     <div className={`flex mb-4 ${isOwnMessage ? "justify-end" : "justify-start"}`}>
-
       <div
         className={`flex items-start gap-2 max-w-[80%]
           ${isOwnMessage ? "flex-row-reverse" : "flex-row"}
         `}
       >
-
-        {/* BUBBLE */}
         <div
           className={`px-4 py-3 rounded-2xl shadow-md min-w-[80px]
             ${isOwnMessage ? "bg-blue-600 text-white" : "bg-slate-800 text-white"}
           `}
         >
-
-          {/* ── THREAD REPLY CONTEXT (if this message is a reply) ── */}
           {parentMsg && (
             <div className="mb-2 bg-black/30 rounded-lg p-2 border-l-2 border-blue-400">
               <p className="text-[10px] text-blue-300 mb-1 font-semibold">
                 ↩ {parentMsg.sender?.firstName || "User"}
               </p>
-
-              {/* Parent was an image */}
               {parentMsg.fileType?.startsWith("image") && (
                 <img
                   src={parentMsg.fileUrl}
@@ -117,13 +108,9 @@ export default function MessageBubble({ message, currentUser }) {
                   className="h-14 w-20 object-cover rounded-md mb-1"
                 />
               )}
-
-              {/* Parent was text */}
               {parentMsg.content && (
                 <p className="text-xs text-slate-300 truncate">{parentMsg.content}</p>
               )}
-
-              {/* Parent was another file */}
               {parentMsg.fileUrl && !parentMsg.fileType?.startsWith("image") && (
                 <p className="text-xs text-slate-300 truncate">
                   📎 {parentMsg.fileName}
@@ -132,7 +119,6 @@ export default function MessageBubble({ message, currentUser }) {
             </div>
           )}
 
-          {/* ── EDIT MODE ── */}
           {isEditing ? (
             <div className="flex flex-col gap-2 min-w-[200px]">
               <textarea
@@ -166,12 +152,10 @@ export default function MessageBubble({ message, currentUser }) {
             </div>
           ) : (
             <>
-              {/* ── TEXT ── */}
               {message.content && !youtubeVideoId && !isWebsiteLink && !message.fileUrl && (
                 <p className="break-words whitespace-pre-wrap">{message.content}</p>
               )}
 
-              {/* ── WEBSITE LINK ── */}
               {isWebsiteLink && (
                 <a href={message.content} target="_blank" rel="noreferrer"
                   className="underline text-blue-300 break-all text-sm">
@@ -179,7 +163,6 @@ export default function MessageBubble({ message, currentUser }) {
                 </a>
               )}
 
-              {/* ── YOUTUBE ── */}
               {youtubeVideoId && (
                 <div className="mt-2">
                   <iframe width="100%" height="220"
@@ -193,7 +176,6 @@ export default function MessageBubble({ message, currentUser }) {
                 </div>
               )}
 
-              {/* ── IMAGE ── */}
               {message.fileType?.startsWith("image") && (
                 <div className="mt-2">
                   <img src={message.fileUrl} alt="img"
@@ -205,7 +187,6 @@ export default function MessageBubble({ message, currentUser }) {
                 </div>
               )}
 
-              {/* ── PDF ── */}
               {message.fileType?.includes("pdf") && (
                 <div className="mt-2">
                   <iframe src={message.fileUrl} title="pdf"
@@ -217,7 +198,6 @@ export default function MessageBubble({ message, currentUser }) {
                 </div>
               )}
 
-              {/* ── OTHER FILES ── */}
               {message.fileUrl &&
                 !message.fileType?.startsWith("image") &&
                 !message.fileType?.includes("pdf") && (
@@ -235,18 +215,15 @@ export default function MessageBubble({ message, currentUser }) {
                 </a>
               )}
 
-              {/* ── REACTIONS ── */}
               {message.reactions && message.reactions.length > 0 && (
-                <MessageReactions reactions={message.reactions} />
+                <MessageReactions reactions={message.reactions} currentUser={currentUser} onReact={handleReact} />
               )}
 
-              {/* ── THREAD REPLIES (replies TO this message) ── */}
               <ThreadReplies
                 parentMessageId={message._id}
                 parentMessage={message}
               />
 
-              {/* ── TIME + EDITED + STATUS ── */}
               <div className="flex items-center justify-end gap-1 mt-2 text-[11px] opacity-70">
                 <span>{time}</span>
                 {message.isEdited && (
@@ -265,23 +242,14 @@ export default function MessageBubble({ message, currentUser }) {
           )}
         </div>
 
-        {/* ── MESSAGE ACTIONS (arrow button) ── */}
         <div className="mt-2 flex-shrink-0">
           <MessageActions
             isOwnMessage={isOwnMessage}
             message={message}
             onEdit={() => { setEditedText(message.content || ""); setIsEditing(true); }}
-            onReact={async (emoji) => {
-              try {
-                const res = await reactToMessageApi(message._id, { emoji });
-                updateMessage(res.data.payload);
-              } catch (err) {
-                console.log(err);
-              }
-            }}
+            onReact={handleReact}
           />
         </div>
-
       </div>
     </div>
   );
