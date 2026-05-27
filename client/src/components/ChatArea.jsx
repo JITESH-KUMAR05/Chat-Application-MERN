@@ -17,7 +17,13 @@ import MessageBubble from "./MessageBubble";
 import EmojiPicker from "emoji-picker-react";
 import socket from "../services/socket";
 import CallingModal from "./CallingModal";
-import { createPeerConnection, closePeerConnection } from "../services/webrtc";
+import { 
+  createPeerConnection, 
+  closePeerConnection,
+  getPeerConnection,
+  addIceCandidateToPeer,
+  flushIceCandidates
+} from "../services/webrtc";
 
 export default function ChatArea() {
   const { register, handleSubmit, watch, setValue, reset } = useForm();
@@ -54,6 +60,9 @@ export default function ChatArea() {
 
   const handleFileChange = (e) => setFile(e.target.files[0]);
 
+  // =====================================================
+  // LOAD CHAT HISTORY
+  // =====================================================
   useEffect(() => {
     if (!selectedUser) return;
 
@@ -79,6 +88,9 @@ export default function ChatArea() {
     loadChatHistory();
   }, [selectedUser, setMessages]);
 
+  // =====================================================
+  // SOCKET LISTENERS (MESSAGES & REACTIONS)
+  // =====================================================
   useEffect(() => {
     socket.on("reactionUpdated", (updatedMessage) => {
       setMessages((prev) =>
@@ -91,6 +103,46 @@ export default function ChatArea() {
     };
   }, [setMessages]);
 
+  // =====================================================
+  // SOCKET LISTENERS (WEBRTC SIGNALING & ICE QUEUE)
+  // =====================================================
+  useEffect(() => {
+    const handleCallAnswered = async ({ answer }) => {
+      try {
+        const peer = getPeerConnection();
+        if (peer) {
+          // 1. Set Remote Description
+          await peer.setRemoteDescription(new RTCSessionDescription(answer));
+          // 2. Safely flush the queued IP addresses now that the description is ready!
+          await flushIceCandidates();
+          useCallStore.getState().setCallAccepted(true);
+        }
+      } catch (err) {
+        console.error("Error setting remote description:", err);
+      }
+    };
+
+    const handleIceCandidate = async ({ candidate }) => {
+      try {
+        // Use our custom queueing function instead of raw WebRTC
+        await addIceCandidateToPeer(candidate);
+      } catch (err) {
+        console.error("Error handling ICE candidate:", err);
+      }
+    };
+
+    socket.on("call-answered", handleCallAnswered);
+    socket.on("ice-candidate", handleIceCandidate);
+
+    return () => {
+      socket.off("call-answered", handleCallAnswered);
+      socket.off("ice-candidate", handleIceCandidate);
+    };
+  }, []);
+
+  // =====================================================
+  // UI LOGIC
+  // =====================================================
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTo({
@@ -100,6 +152,18 @@ export default function ChatArea() {
     }
   }, [messages]);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (pickerRef.current && !pickerRef.current.contains(event.target))
+        setShowPicker(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // =====================================================
+  // SEND MESSAGE
+  // =====================================================
   const sendMessageHandler = async (data) => {
     try {
       let res;
@@ -127,7 +191,6 @@ export default function ChatArea() {
         res = await sendMessage(formData);
       }
 
-
       if (res?.data?.payload) {
         const newMessage = res.data.payload;
         if (replyingToMessage) newMessage.parentMessage = replyingToMessage;
@@ -148,15 +211,9 @@ export default function ChatArea() {
     }
   };
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (pickerRef.current && !pickerRef.current.contains(event.target))
-        setShowPicker(false);
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
+  // =====================================================
+  // WEBRTC CALL INITIATION & CLEANUP
+  // =====================================================
   const cleanupCall = () => {
     try {
       const currentLocalStream = useCallStore.getState().localStream;
@@ -218,6 +275,9 @@ export default function ChatArea() {
     }
   };
 
+  // =====================================================
+  // RENDER UI
+  // =====================================================
   if (!selectedUser) {
     return (
       <div className="flex-1 bg-[#020617] flex items-center justify-center">

@@ -1,30 +1,28 @@
 let peerConnection = null;
+let pendingCandidates = []; 
 
 const getIceServers = () => {
-  return {
-    iceServers: [
-      
-      {
-        urls: "stun:stun.l.google.com:19302",
-      },
-      {
-        urls: "stun:stun1.l.google.com:19302", 
-      },
-      
-      {
-        urls: import.meta.env.VITE_TURN_URL,
-        username: import.meta.env.VITE_TURN_USERNAME,
-        credential: import.meta.env.VITE_TURN_PASSWORD,
-      },
-    ],
-  };
+  const servers = [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
+  ];
+
+  if (import.meta.env.VITE_TURN_URL) {
+    servers.push({
+      urls: import.meta.env.VITE_TURN_URL,
+      username: import.meta.env.VITE_TURN_USERNAME,
+      credential: import.meta.env.VITE_TURN_PASSWORD,
+    });
+  }
+
+  return { iceServers: servers };
 };
 
 export const createPeerConnection = (onTrack, onIceCandidate) => {
   peerConnection = new RTCPeerConnection(getIceServers());
+  pendingCandidates = []; 
 
   peerConnection.ontrack = onTrack;
-
   peerConnection.onicecandidate = (event) => {
     if (event.candidate) {
       onIceCandidate(event.candidate);
@@ -36,9 +34,35 @@ export const createPeerConnection = (onTrack, onIceCandidate) => {
 
 export const getPeerConnection = () => peerConnection;
 
+
+export const addIceCandidateToPeer = async (candidate) => {
+  if (!peerConnection) return;
+
+  if (peerConnection.remoteDescription && peerConnection.remoteDescription.type) {
+    await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+  } else {
+    pendingCandidates.push(candidate);
+  }
+};
+
+
+export const flushIceCandidates = async () => {
+  if (!peerConnection) return;
+  
+  for (const candidate of pendingCandidates) {
+    try {
+      await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+    } catch (err) {
+      console.error("Error adding queued ICE candidate:", err);
+    }
+  }
+  pendingCandidates = [];
+};
+
 export const closePeerConnection = () => {
   if (peerConnection) {
     peerConnection.close();
     peerConnection = null;
   }
+  pendingCandidates = []; 
 };
