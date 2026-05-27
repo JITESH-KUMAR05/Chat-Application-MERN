@@ -70,7 +70,7 @@ userRouter.post("/register", async (req, res) => {
     if (!userObj.email) {
       return res.status(400).json({ error: "Email is required." });
     }
-    const emailRegex = /^[a-zA-Z][a-zA-Z0-9._%+-]*@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    const emailRegex = /^[a-zA-Z][a-zA-Z0-9._%+-]*@[a-zA-Z][a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(userObj.email)) {
       return res.status(400).json({
         error: "Invalid email format. The email local part must start with a letter and have a valid domain.",
