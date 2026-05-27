@@ -26,15 +26,13 @@ const getIceServers = () => {
 
 export const createPeerConnection = (onTrack, onIceCandidate) => {
   peerConnection = new RTCPeerConnection(getIceServers());
-  pendingCandidates = []; 
-
+  
   peerConnection.ontrack = onTrack;
   peerConnection.onicecandidate = (event) => {
     if (event.candidate) {
       onIceCandidate(event.candidate);
     }
   };
-
   return peerConnection;
 };
 
@@ -42,34 +40,32 @@ export const getPeerConnection = () => peerConnection;
 
 
 export const addIceCandidateToPeer = async (candidate) => {
-  if (!peerConnection) return;
-
-  if (peerConnection.remoteDescription && peerConnection.remoteDescription.type) {
-    await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+  
+  if (peerConnection && peerConnection.remoteDescription && peerConnection.remoteDescription.type) {
+    try {
+      await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+    } catch (err) {
+      console.error("Ice candidate error", err);
+    }
   } else {
+ 
     pendingCandidates.push(candidate);
   }
 };
 
 
-
 export const flushIceCandidates = async () => {
-  
-  if (!peerConnection || !peerConnection.remoteDescription) {
-    console.warn("Skipping ICE flush: Remote description not ready yet.");
-    return;
-  }
+  if (!peerConnection || !peerConnection.remoteDescription) return;
   
   for (const candidate of pendingCandidates) {
     try {
       await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
     } catch (err) {
-      console.error("Error adding queued ICE candidate:", err);
+      console.error("Error flushing queued ICE candidate:", err);
     }
   }
   pendingCandidates = [];
 };
-
 export const closePeerConnection = () => {
   if (peerConnection) {
     peerConnection.close();

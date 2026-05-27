@@ -110,23 +110,23 @@ export default function ChatArea() {
     const handleCallAnswered = async ({ answer }) => {
       try {
         const peer = getPeerConnection();
-        if (peer) {
-          
-          if (peer.signalingState !== "stable") {
-            await peer.setRemoteDescription(new RTCSessionDescription(answer));
-          }
+        
+        if (!peer || isProcessingAnswer || useCallStore.getState().callAccepted) return;
+        
+        isProcessingAnswer = true; 
 
-          // Safely flush the queued IP addresses
-          await flushIceCandidates();
-          useCallStore.getState().setCallAccepted(true);
-        }
+        await peer.setRemoteDescription(new RTCSessionDescription(answer));
+        await flushIceCandidates();
+        useCallStore.getState().setCallAccepted(true);
+        
       } catch (err) {
         console.error("Error setting remote description:", err);
+      } finally {
+        isProcessingAnswer = false; 
       }
     };
-    const handleIceCandidate = async ({ candidate }) => {
+        const handleIceCandidate = async ({ candidate }) => {
       try {
-        // Use our custom queueing function instead of raw WebRTC
         await addIceCandidateToPeer(candidate);
       } catch (err) {
         console.error("Error handling ICE candidate:", err);
