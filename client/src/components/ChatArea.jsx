@@ -60,6 +60,7 @@ export default function ChatArea() {
 
   const handleFileChange = (e) => setFile(e.target.files[0]);
 
+  const [isSending, setIsSending] = useState(false);
   // =====================================================
   // LOAD CHAT HISTORY
   // =====================================================
@@ -167,6 +168,10 @@ export default function ChatArea() {
   // SEND MESSAGE
   // =====================================================
   const sendMessageHandler = async (data) => {
+    if (isSending || (!data.message?.trim() && !file)) return;
+
+    setIsSending(true); 
+
     try {
       let res;
 
@@ -210,9 +215,10 @@ export default function ChatArea() {
       setReplyingToMessage(null);
     } catch (err) {
       console.error(err);
+    } finally {
+      setIsSending(false); 
     }
   };
-
   // =====================================================
   // WEBRTC CALL INITIATION & CLEANUP
   // =====================================================
