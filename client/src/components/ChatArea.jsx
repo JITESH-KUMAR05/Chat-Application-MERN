@@ -111,9 +111,12 @@ export default function ChatArea() {
       try {
         const peer = getPeerConnection();
         if (peer) {
-          // 1. Set Remote Description
-          await peer.setRemoteDescription(new RTCSessionDescription(answer));
-          // 2. Safely flush the queued IP addresses now that the description is ready!
+          
+          if (peer.signalingState !== "stable") {
+            await peer.setRemoteDescription(new RTCSessionDescription(answer));
+          }
+
+          // Safely flush the queued IP addresses
           await flushIceCandidates();
           useCallStore.getState().setCallAccepted(true);
         }
@@ -121,7 +124,6 @@ export default function ChatArea() {
         console.error("Error setting remote description:", err);
       }
     };
-
     const handleIceCandidate = async ({ candidate }) => {
       try {
         // Use our custom queueing function instead of raw WebRTC

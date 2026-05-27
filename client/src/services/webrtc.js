@@ -46,8 +46,13 @@ export const addIceCandidateToPeer = async (candidate) => {
 };
 
 
+
 export const flushIceCandidates = async () => {
-  if (!peerConnection) return;
+  
+  if (!peerConnection || !peerConnection.remoteDescription) {
+    console.warn("Skipping ICE flush: Remote description not ready yet.");
+    return;
+  }
   
   for (const candidate of pendingCandidates) {
     try {
